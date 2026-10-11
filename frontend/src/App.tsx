@@ -5,6 +5,7 @@ import { RutaPublica } from './components/comun/RutaPublica.js';
 import { PlantillaPanel } from './components/diseno/PlantillaPanel.js';
 
 // Páginas de la Aplicación en Español
+import { LandingPage } from './pages/landing/LandingPage.js';
 import { PaginaInicioSesion } from './pages/autenticacion/PaginaInicioSesion.js';
 import { PaginaRegistro } from './pages/autenticacion/PaginaRegistro.js';
 import { PaginaPanelPrincipal } from './pages/panel/PaginaPanelPrincipal.js';
@@ -21,6 +22,10 @@ export function App() {
     <ProveedorAutenticacion>
       <BrowserRouter>
         <Routes>
+          {/* Ruta Pública: Landing (visible siempre, también con sesión iniciada) */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/inicio" element={<LandingPage />} />
+
           {/* Ruta Pública: Acceso e Inicio de Sesión y Registro */}
           <Route element={<RutaPublica />}>
             <Route path="/login" element={<PaginaInicioSesion />} />
@@ -59,8 +64,7 @@ export function App() {
           </Route>
 
           {/* Rutas de Redirección Automática */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </ProveedorAutenticacion>

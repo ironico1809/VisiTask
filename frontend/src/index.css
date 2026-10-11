@@ -6,6 +6,10 @@
   --ease-soft-in-out: cubic-bezier(0.37, 0, 0.63, 1);  /* bucle tipo seno, sin cortes */
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background: #E8ECEF;
@@ -13,7 +17,18 @@ body {
   color: #0B1020;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* Garantiza cero scrollbar en el viewport */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Soporte dinámico para desplazamiento en páginas extensas */
+html.desplazamiento-suave {
+  scroll-behavior: smooth;
+}
+
+body.pagina-desplazable {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 /* ======================================================== */
