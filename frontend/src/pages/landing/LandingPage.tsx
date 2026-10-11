@@ -253,6 +253,12 @@ const preguntas = [
 
 const longitudArco = 170;
 
+const mensajesTelemetria = [
+  'Buffer en RAM: Fotograma analizado y descartado (0 KB guardados)',
+  'MediaPipe Pose: Ángulo cervical RULA 26° calibrado a 30 FPS',
+  'Privacidad ISO 11226: Cero almacenamiento o transmisión de video',
+];
+
 export function LandingPage() {
   const raizRef = useRef<HTMLDivElement>(null);
   const [indiceRitmo, setIndiceRitmo] = useState<number | null>(null);
@@ -261,6 +267,14 @@ export function LandingPage() {
   const [progresoScroll, setProgresoScroll] = useState(0);
   const [zonaEspina, setZonaEspina] = useState('C1-C7 · Cervical');
   const [mostrarHud, setMostrarHud] = useState(false);
+  const [indiceTelemetria, setIndiceTelemetria] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndiceTelemetria((prev) => (prev + 1) % mensajesTelemetria.length);
+    }, 4200);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const { body, documentElement } = document;
@@ -502,6 +516,28 @@ export function LandingPage() {
                 Hombros <b>14°</b>
               </span>
             </div>
+
+            {/* Píldora de telemetría volátil que asciende y se desvanece */}
+            <div className="telemetria-volatil" aria-hidden="true" key={indiceTelemetria}>
+              <div className="telemetria-volatil__item">
+                <span className="telemetria-volatil__punto" />
+                <span>{mensajesTelemetria[indiceTelemetria]}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Indicador de desplazamiento que sube hacia arriba y se desvanece al hacer scroll */}
+          <div
+            className="heroe__scroll-hint"
+            style={{
+              transform: `translateY(-${Math.min(48, progresoScroll * 260)}px)`,
+              opacity: Math.max(0, 1 - progresoScroll * 6.5),
+              pointerEvents: progresoScroll > 0.08 ? 'none' : 'auto',
+            }}
+          >
+            <span className="heroe__scroll-linea" />
+            <span className="heroe__scroll-texto">Desliza para explorar telemetría</span>
+            <span className="heroe__scroll-flecha">↓</span>
           </div>
         </section>
 
