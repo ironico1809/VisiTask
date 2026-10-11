@@ -1,0 +1,52 @@
+/* Estilos especializados para la vista de Gestión de Perfil - visitask ErgoCheck SST */
+
+.perfil-avatar-preview {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.perfil-avatar-preview:hover {
+  transform: scale(1.02);
+}
+
+.tarjeta-perfil {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgba(11, 16, 32, 0.04), 0 1px 2px -1px rgba(11, 16, 32, 0.04);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tarjeta-perfil:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px -4px rgba(11, 16, 32, 0.06);
+}
+
+.campo-perfil {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 13.5px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #0b1020;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.campo-perfil:focus {
+  outline: none;
+  border-color: #0b1020;
+  box-shadow: 0 0 0 3px rgba(198, 244, 50, 0.35);
+}
+
+.campo-perfil::placeholder {
+  color: #94a3b8;
+}
+
+.campo-perfil-bloqueado {
+  background-color: #f8fafc;
+  color: #334155;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+}

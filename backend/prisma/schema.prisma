@@ -1,0 +1,516 @@
+// Prisma schema for ErgoCheck & Monitor AI
+// Compatible with Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// 1. IDENTIDAD, USUARIOS Y MULTI-TENANCY (RBAC)
+// ==========================================
+
+enum Rol {
+  SUPER_ADMINISTRADOR
+  ADMIN_ORGANIZACION
+  SUPERVISOR
+  EVALUADOR
+  EMPLEADO
+  POSTULANTE
+}
+
+model Usuario {
+  id              String                @id @default(uuid())
+  correo          String                @unique @map("correo")
+  claveHash       String                @map("clave_hash")
+  nombre          String                @map("nombre")
+  apellido        String                @map("apellido")
+  fotoUrl         String?               @map("foto_url")
+  activo          Boolean               @default(true) @map("activo")
+  creadoEn        DateTime              @default(now()) @map("creado_en")
+  actualizadoEn   DateTime              @updatedAt @map("actualizado_en")
+
+  // Relaciones
+  membresias          UsuarioOrganizacion[]
+  consentimientos     LegalConsent[]
+  sesionesErgonomicas ErgonomicSession[]
+  sesionesSupervision SupervisionSession[]
+  registrosAuditoria  AuditLog[]
+  alertas             Alert[]
+
+  @@map("usuarios")
+}
+
+model Organizacion {
+  id                    String                @id @default(uuid())
+  nombre                String                @map("nombre")
+  identificacionFiscal  String?               @map("identificacion_fiscal")
+  slug                  String                @unique
+  logoUrl               String?               @map("logo_url")
+  activo                Boolean               @default(true) @map("activo")
+  creadoEn              DateTime              @default(now()) @map("creado_en")
+  actualizadoEn         DateTime              @updatedAt @map("actualizado_en")
+
+  // Relaciones
+  departamentos   Departamento[]
+  membresias      UsuarioOrganizacion[]
+  suscripciones   Subscription[]
+  evaluaciones    Assessment[]
+
+  @@map("organizaciones")
+}
+
+model Departamento {
+  id              String                @id @default(uuid())
+  organizacionId  String                @map("organizacion_id")
+  nombre          String                @map("nombre")
+  descripcion     String?               @map("descripcion")
+  creadoEn        DateTime              @default(now()) @map("creado_en")
+  actualizadoEn   DateTime              @updatedAt @map("actualizado_en")
+
+  organizacion    Organizacion          @relation(fields: [organizacionId], references: [id], onDelete: Cascade)
+  membresias      UsuarioOrganizacion[]
+
+  @@map("departamentos")
+}
+
+model UsuarioOrganizacion {
+  id              String                @id @default(uuid())
+  usuarioId       String                @map("usuario_id")
+  organizacionId  String                @map("organizacion_id")
+  departamentoId  String?               @map("departamento_id")
+  rol             Rol                   @default(EMPLEADO)
+  fechaIngreso    DateTime              @default(now()) @map("fecha_ingreso")
+
+  usuario         Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  organizacion    Organizacion          @relation(fields: [organizacionId], references: [id], onDelete: Cascade)
+  departamento    Departamento?         @relation(fields: [departamentoId], references: [id], onDelete: SetNull)
+
+  @@unique([usuarioId, organizacionId])
+  @@map("usuarios_organizaciones")
+}
+
+// ==========================================
+// 2. CONSENTIMIENTO INFORMADO DIGITAL (CU03)
+// ==========================================
+
+enum ConsentType {
+  CAMERA_AND_BIOMETRICS
+  TELEMETRY_AND_ACTIVITY
+  TERMS_AND_PRIVACY
+}
+
+model LegalConsent {
+  id              String             @id @default(uuid())
+  userId          String             @map("user_id")
+  type            ConsentType
+  version         String             @default("1.0")
+  isAccepted      Boolean            @default(false) @map("is_accepted")
+  ipAddress       String?            @map("ip_address")
+  userAgent       String?            @map("user_agent")
+  acceptedAt      DateTime?          @map("accepted_at")
+  revokedAt       DateTime?          @map("revoked_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  usuario         Usuario            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("legal_consents")
+}
+
+// ==========================================
+// 3. SUSCRIPCIONES Y PAGOS SAAS (CU04, CU05)
+// ==========================================
+
+enum PlanType {
+  SAAS_SEAT_MONTHLY
+  PAY_PER_EXAM_PACKAGE
+  ENTERPRISE_CUSTOM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  TRIAL
+}
+
+model Subscription {
+  id              String             @id @default(uuid())
+  organizationId  String             @map("organization_id")
+  planType        PlanType           @map("plan_type")
+  status          SubscriptionStatus @default(TRIAL)
+  seatsAllocated  Int                @default(5) @map("seats_allocated")
+  examsAllocated  Int                @default(0) @map("exams_allocated")
+  examsUsed       Int                @default(0) @map("exams_used")
+  currentPeriodStart DateTime        @map("current_period_start")
+  currentPeriodEnd   DateTime        @map("current_period_end")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  organizacion    Organizacion       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoices        Invoice[]
+
+  @@map("subscriptions")
+}
+
+enum InvoiceStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+model Invoice {
+  id              String             @id @default(uuid())
+  subscriptionId  String             @map("subscription_id")
+  invoiceNumber   String             @unique @map("invoice_number")
+  amount          Decimal            @db.Decimal(10, 2)
+  currency        String             @default("USD")
+  status          InvoiceStatus      @default(PENDING)
+  paymentProvider String?            @map("payment_provider") // Stripe, QR, etc.
+  transactionId   String?            @map("transaction_id")
+  receiptUrl      String?            @map("receipt_url")
+  paidAt          DateTime?          @map("paid_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  subscription    Subscription       @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+// ==========================================
+// 4. NÚCLEO ERGONÓMICO RULA / REBA (CU06 - CU09)
+// ==========================================
+
+model ErgonomicSession {
+  id              String             @id @default(uuid())
+  userId          String             @map("user_id")
+  startTime       DateTime           @default(now()) @map("start_time")
+  endTime         DateTime?          @map("end_time")
+  averageRula     Float?             @map("average_rula")
+  maxRula         Int?               @map("max_rula")
+  totalAlerts     Int                @default(0) @map("total_alerts")
+
+  usuario         Usuario            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  calibrations    CalibrationBaseline[]
+  postureLogs     PostureLog[]
+  alerts          Alert[]
+  syntheticIndices SyntheticIndex[]
+
+  @@map("ergonomic_sessions")
+}
+
+model CalibrationBaseline {
+  id                  String           @id @default(uuid())
+  sessionId           String           @map("session_id")
+  neutralNeckAngle    Float            @map("neutral_neck_angle")
+  neutralTrunkAngle   Float            @map("neutral_trunk_angle")
+  neutralShoulderDist Float            @map("neutral_shoulder_dist")
+  ambientLighting     Float?           @map("ambient_lighting")
+  calibratedAt        DateTime         @default(now()) @map("calibrated_at")
+
+  session             ErgonomicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("calibration_baselines")
+}
+
+model PostureLog {
+  id                  String           @id @default(uuid())
+  sessionId           String           @map("session_id")
+  rulaScore           Int              @map("rula_score")
+  neckAngle           Float            @map("neck_angle")
+  trunkAngle          Float            @map("trunk_angle")
+  shoulderAngle       Float            @map("shoulder_angle")
+  isStatic            Boolean          @default(false) @map("is_static")
+  staticSeconds       Int              @default(0) @map("static_seconds")
+  timestamp           DateTime         @default(now())
+
+  session             ErgonomicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, timestamp])
+  @@map("posture_logs")
+}
+
+// ==========================================
+// 5. ALERTAS E INTERVENCIONES (CU10)
+// ==========================================
+
+enum AlertLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertType {
+  POSTURAL_RISK_PROLONGED
+  STATIC_OVERLOAD
+  FATIGUE_ACCUMULATED
+  EYE_BREAK_20_20_20
+  ANOMALY_BEHAVIOR
+}
+
+model Alert {
+  id              String             @id @default(uuid())
+  userId          String             @map("user_id")
+  sessionId       String?            @map("session_id")
+  type            AlertType
+  level           AlertLevel         @default(MEDIUM)
+  message         String
+  isSentToMobile  Boolean            @default(false) @map("is_sent_to_mobile")
+  isDismissed     Boolean            @default(false) @map("is_dismissed")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  usuario         Usuario            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session         ErgonomicSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@map("alerts")
+}
+
+// ==========================================
+// 6. SUPERVISIÓN, ANTI-CHEAT Y TELEMETRÍA (CU11 - CU19)
+// ==========================================
+
+enum SessionMode {
+  EXAM
+  INTERVIEW
+  WORK_MONITORING
+}
+
+enum SupervisionStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  FINISHED
+  TERMINATED_FOR_ANOMALY
+}
+
+model SupervisionSession {
+  id              String             @id @default(uuid())
+  userId          String             @map("user_id")
+  assessmentId    String?            @map("assessment_id")
+  mode            SessionMode        @default(EXAM)
+  status          SupervisionStatus  @default(PENDING)
+  startTime       DateTime           @default(now()) @map("start_time")
+  endTime         DateTime?          @map("end_time")
+
+  usuario         Usuario            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment      Assessment?        @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
+  gazeEvents      GazeEvent[]
+  faceAuditEvents FaceAuditEvent[]
+  telemetryEvents TelemetryEvent[]
+  interviewReactions InterviewReaction[]
+  incidents       Incident[]
+  syntheticIndices SyntheticIndex[]
+  reports         Report[]
+
+  @@map("supervision_sessions")
+}
+
+model Assessment {
+  id              String             @id @default(uuid())
+  organizationId  String             @map("organization_id")
+  title           String
+  description     String?
+  externalFormUrl String             @map("external_form_url") // Google Forms / third-party
+  accessCode      String             @unique @map("access_code")
+  durationMinutes Int                @default(60) @map("duration_minutes")
+  isActive        Boolean            @default(true) @map("is_active")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  organizacion    Organizacion       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sessions        SupervisionSession[]
+  interviewQuestions InterviewQuestion[]
+
+  @@map("assessments")
+}
+
+model GazeEvent {
+  id                      String             @id @default(uuid())
+  supervisionSessionId    String             @map("supervision_session_id")
+  pitch                   Float
+  yaw                     Float
+  roll                    Float
+  irisOffsetX             Float              @map("iris_offset_x")
+  irisOffsetY             Float              @map("iris_offset_y")
+  isSuspectedLapPhone     Boolean            @default(false) @map("is_suspected_lap_phone")
+  durationSeconds         Float              @default(1.0) @map("duration_seconds")
+  timestamp               DateTime           @default(now())
+
+  session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
+
+  @@index([supervisionSessionId, timestamp])
+  @@map("gaze_events")
+}
+
+enum FaceAuditType {
+  FACE_ABSENT
+  MULTIPLE_FACES
+}
+
+model FaceAuditEvent {
+  id                      String             @id @default(uuid())
+  supervisionSessionId    String             @map("supervision_session_id")
+  type                    FaceAuditType
+  detectedCount           Int                @default(0) @map("detected_count")
+  durationSeconds         Float              @default(0.0) @map("duration_seconds")
+  timestamp               DateTime           @default(now())
+
+  session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
+
+  @@index([supervisionSessionId, timestamp])
+  @@map("face_audit_events")
+}
+
+enum TelemetryType {
+  WINDOW_BLUR
+  WINDOW_FOCUS
+  FULLSCREEN_EXIT
+  SHORTCUT_BLOCKED
+  CLIPBOARD_COPY_BLOCKED
+  CLIPBOARD_PASTE_BLOCKED
+  TAB_SWITCH
+  IDLE_THRESHOLD_EXCEEDED
+}
+
+model TelemetryEvent {
+  id                      String             @id @default(uuid())
+  supervisionSessionId    String             @map("supervision_session_id")
+  type                    TelemetryType
+  details                 String?
+  targetDomain            String?            @map("target_domain")
+  isForbiddenDomain       Boolean            @default(false) @map("is_forbidden_domain")
+  timestamp               DateTime           @default(now())
+
+  session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
+
+  @@index([supervisionSessionId, timestamp])
+  @@map("telemetry_events")
+}
+
+model InterviewQuestion {
+  id              String             @id @default(uuid())
+  assessmentId    String             @map("assessment_id")
+  questionText    String             @map("question_text")
+  orderIndex      Int                @default(0) @map("order_index")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  assessment      Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  reactions       InterviewReaction[]
+
+  @@map("interview_questions")
+}
+
+model InterviewReaction {
+  id                      String             @id @default(uuid())
+  supervisionSessionId    String             @map("supervision_session_id")
+  questionId              String             @map("question_id")
+  stimulusTimestamp       DateTime           @map("stimulus_timestamp")
+  reactionLatencyMs       Int                @map("reaction_latency_ms")
+  facialTensionDelta      Float              @map("facial_tension_delta")
+  smileIncongruityScore   Float              @map("smile_incongruity_score")
+  surpriseScore           Float              @map("surprise_score")
+  cognitiveStressScore    Float              @map("cognitive_stress_score")
+
+  session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
+  question                InterviewQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("interview_reactions")
+}
+
+// ==========================================
+// 7. CORRELACIÓN, INCIDENTES Y AUDITORÍA (CU20 - CU26)
+// ==========================================
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  FLAGGED_AUTOMATIC
+  CONFIRMED_VIOLATION
+  DISMISSED_FALSE_POSITIVE
+}
+
+model Incident {
+  id                      String             @id @default(uuid())
+  supervisionSessionId    String             @map("supervision_session_id")
+  title                   String
+  description             String
+  severity                IncidentSeverity   @default(MEDIUM)
+  status                  IncidentStatus     @default(FLAGGED_AUTOMATIC)
+  correlatedRule          String             @map("correlated_rule")
+  evidenceSummary         Json?              @map("evidence_summary")
+  timestamp               DateTime           @default(now())
+  reviewedByUserId        String?            @map("reviewed_by_user_id")
+  reviewedAt              DateTime?          @map("reviewed_at")
+
+  session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
+
+  @@map("incidents")
+}
+
+enum IndexType {
+  INTEGRITY_INDEX
+  ERGONOMIC_WELLBEING_INDEX
+}
+
+model SyntheticIndex {
+  id                      String             @id @default(uuid())
+  supervisionSessionId    String?            @map("supervision_session_id")
+  ergonomicSessionId      String?            @map("ergonomic_session_id")
+  type                    IndexType
+  score                   Float              // 0 a 100
+  penaltiesBreakdown      Json?              @map("penalties_breakdown")
+  calculatedAt            DateTime           @default(now()) @map("calculated_at")
+
+  supervisionSession      SupervisionSession? @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
+  ergonomicSession        ErgonomicSession?   @relation(fields: [ergonomicSessionId], references: [id], onDelete: Cascade)
+
+  @@map("synthetic_indices")
+}
+
+enum ReportType {
+  ERGONOMIC_SST_CORPORATE
+  FORENSIC_EXAM_INDIVIDUAL
+}
+
+model Report {
+  id                      String             @id @default(uuid())
+  supervisionSessionId    String?            @map("supervision_session_id")
+  type                    ReportType
+  title                   String
+  pdfUrl                  String?            @map("pdf_url")
+  excelUrl                String?            @map("excel_url")
+  summaryMetrics          Json?              @map("summary_metrics")
+  generatedAt             DateTime           @default(now()) @map("generated_at")
+
+  session                 SupervisionSession? @relation(fields: [supervisionSessionId], references: [id], onDelete: SetNull)
+
+  @@map("reports")
+}
+
+model AuditLog {
+  id              String             @id @default(uuid())
+  userId          String?            @map("user_id")
+  action          String
+  entity          String
+  entityId        String?            @map("entity_id")
+  details         Json?
+  ipAddress       String?            @map("ip_address")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  usuario         Usuario?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

@@ -1,0 +1,548 @@
+@import "tailwindcss";
+
+:root {
+  /* Curvas de easing suaves reutilizables */
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);          /* salida muy fluida */
+  --ease-soft-in-out: cubic-bezier(0.37, 0, 0.63, 1);  /* bucle tipo seno, sin cortes */
+}
+
+body {
+  margin: 0;
+  background: #E8ECEF;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0B1020;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; /* Garantiza cero scrollbar en el viewport */
+}
+
+/* ======================================================== */
+/* VISITASK MOTION SPEC IMPLEMENTATION — SOFT / PROFESSIONAL */
+/* ======================================================== */
+
+/* --- Entrada general: elevación ligera y fade suave --- */
+.rise {
+  animation: rise 0.85s var(--ease-soft) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Barrido lima del titular --- */
+.mark {
+  background: linear-gradient(#C6F432, #C6F432) no-repeat left center/0% 100%;
+  animation: wipe 0.85s 0.4s var(--ease-soft) forwards;
+  padding: 0 8px;
+  border-radius: 8px;
+  box-decoration-break: clone;
+}
+
+@keyframes wipe {
+  to {
+    background-size: 100% 100%;
+  }
+}
+
+/* --- Vértebras: ensamblaje fluido + respiración continua --- */
+.v {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-composition: add;
+  animation: vIn 0.75s var(--ease-soft) both,
+             vFloat 5s var(--ease-soft-in-out) infinite;
+  animation-delay: var(--vd, 100ms), calc(var(--vd, 100ms) + 750ms);
+}
+
+@keyframes vIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+.v.hot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-composition: add;
+  animation: vIn 0.75s var(--ease-soft) both,
+             vFloat 5s var(--ease-soft-in-out) infinite,
+             pulse 3s var(--ease-soft-in-out) infinite;
+  animation-delay: var(--vd, 100ms), calc(var(--vd, 100ms) + 750ms), 1.8s;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* --- Cabeza: asentamiento + balanceo sutil --- */
+.head-in {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation-composition: add;
+  animation: vIn 0.8s 0.95s var(--ease-soft) both,
+             headSway 6s 1.8s var(--ease-soft-in-out) infinite;
+}
+
+@keyframes headSway {
+  0%, 100% { transform: rotate(-2deg); }
+  50%      { transform: rotate(2deg); }
+}
+
+/* --- Líneas de cota dibujándose --- */
+.leader-line {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: drawLine 1s 1.4s var(--ease-soft) forwards;
+}
+
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* --- Etiquetas anatómicas: aparición suave con desliz --- */
+.anno-label {
+  opacity: 0;
+  animation: labelRise 0.85s 1.75s var(--ease-soft) forwards;
+}
+
+@keyframes labelRise {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* --- Eje ideal: flujo de guiones + respiración de opacidad --- */
+.axis {
+  animation: dash 1.6s linear infinite, axisBreathe 5s var(--ease-soft-in-out) infinite;
+  transition: stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+@keyframes axisBreathe {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+@keyframes axisFlash {
+  0% { stroke: #C6F432; stroke-width: 1.5; filter: drop-shadow(0 0 0px #C6F432); }
+  50% { stroke: #ffffff; stroke-width: 3; filter: drop-shadow(0 0 10px #C6F432); }
+  100% { stroke: #C6F432; stroke-width: 1.5; filter: drop-shadow(0 0 0px #C6F432); }
+}
+
+.axis.flash {
+  animation: dash 1.6s linear infinite, axisFlash 0.5s ease-out;
+}
+
+/* --- Radar: respiración tipo ping en cada anillo --- */
+.radar-ring circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: radarPing 4.8s var(--ease-soft-in-out) infinite;
+}
+
+.radar-ring circle:nth-child(1) { animation-delay: 0s; }
+.radar-ring circle:nth-child(2) { animation-delay: 1.6s; }
+.radar-ring circle:nth-child(3) { animation-delay: 3.2s; }
+
+@keyframes radarPing {
+  0%   { opacity: 0.08; transform: scale(0.92); }
+  50%  { opacity: 0.42; transform: scale(1.02); }
+  100% { opacity: 0.08; transform: scale(1.08); }
+}
+
+/* --- Vértebras interactivas --- */
+.v-elem {
+  transition: transform 0.4s var(--ease-soft), fill 0.3s ease, opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.v-elem:hover {
+  filter: brightness(1.25) drop-shadow(0 0 5px rgba(198, 244, 50, 0.6));
+}
+
+/* --- Barras de ritmo: crecimiento + respiración + hover --- */
+.bar {
+  transform-origin: bottom;
+  animation-composition: add;
+  animation: grow 0.85s var(--ease-soft) both,
+             barBreathe 3.6s var(--ease-soft-in-out) infinite;
+  animation-delay: var(--bd, 1300ms), calc(var(--bd, 1300ms) + 850ms);
+  transition: transform 0.25s var(--ease-soft), filter 0.25s ease, background-color 0.25s ease;
+  cursor: pointer;
+}
+
+.bar:hover {
+  transform: scaleY(1.15) scaleX(1.15) !important;
+  filter: brightness(1.2) drop-shadow(0 -2px 8px rgba(198, 244, 50, 0.55));
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0.04);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes barBreathe {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.12); }
+}
+
+/* --- Check de éxito dibujándose --- */
+@keyframes checkDraw {
+  from { stroke-dashoffset: 24; opacity: 0; }
+  to   { stroke-dashoffset: 0;  opacity: 1; }
+}
+
+.check-draw {
+  stroke-dasharray: 24;
+  animation: checkDraw 0.45s var(--ease-soft) forwards;
+}
+
+/* --- Shake de error suavizado --- */
+.sp-shake {
+  animation: shake 0.45s var(--ease-soft);
+}
+
+@keyframes shake {
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+/* --- Panel oscuro: deriva de luz ambiental --- */
+.sp-art.rise {
+  background-color: #0B1020;
+  background-image: linear-gradient(135deg, #0B1020 0%, #152248 45%, #0B1020 100%);
+  background-size: 200% 200%;
+  animation: rise 0.85s var(--ease-soft) both,
+             panelDrift 10s var(--ease-soft-in-out) infinite;
+  animation-delay: var(--d, 200ms), 0ms;
+}
+
+@keyframes panelDrift {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .mark {
+    background-size: 100% 100%;
+  }
+  .leader-line {
+    stroke-dashoffset: 0;
+  }
+  .anno-label {
+    opacity: 1;
+    transform: none;
+  }
+  .sp-art.rise {
+    background-position: 0 50%;
+  }
+  .sp-btn {
+    background-image: none;
+  }
+}
+
+/* ======================================================== */
+/* COMPACT UI SIZING (100vh ZERO SCROLL)                    */
+/* ======================================================== */
+
+.sp-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 20px;
+  height: 100%;
+  max-height: 840px;
+}
+
+/* Typography Fluid Micro-Interactions */
+.font-headline {
+  font-variation-settings: 'opsz' 48, 'wght' 800;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  transition: letter-spacing 0.4s var(--ease-soft);
+}
+
+.font-headline:hover {
+  letter-spacing: -0.015em;
+}
+
+.eyebrow-shimmer {
+  letter-spacing: 0.12em;
+  transition: letter-spacing 0.4s var(--ease-soft), color 0.4s var(--ease-soft);
+}
+
+.eyebrow-shimmer:hover {
+  letter-spacing: 0.16em;
+  color: #0B1020;
+}
+
+.brand-group {
+  cursor: pointer;
+}
+
+.brand-title {
+  transition: letter-spacing 0.4s var(--ease-soft);
+}
+
+.brand-group:hover .brand-title {
+  letter-spacing: 0.01em;
+}
+
+.brand-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dotPulse 2.4s var(--ease-soft-in-out) infinite;
+  transition: transform 0.3s var(--ease-soft);
+}
+
+.brand-group:hover .brand-dot {
+  animation: none;
+  transform: scale(1.6);
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.75); }
+  50%      { opacity: 1;    transform: scale(1.4); }
+}
+
+/* Interactive Fields */
+.sp-in-wrap {
+  position: relative;
+  transition: transform 0.3s var(--ease-soft);
+}
+
+.sp-in-wrap:focus-within {
+  transform: translateY(-1px);
+}
+
+.sp-in {
+  box-sizing: border-box;
+  width: 100%;
+  height: 46px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0B1020;
+  font: 500 14px 'Geist', sans-serif;
+  padding: 0 14px;
+  transition: border-color 0.25s var(--ease-soft), box-shadow 0.25s var(--ease-soft),
+              background-color 0.2s var(--ease-soft);
+}
+
+.sp-in:hover {
+  border-color: #94a3b8;
+}
+
+.sp-in::placeholder {
+  color: #94a3b8;
+  transition: transform 0.25s var(--ease-soft), opacity 0.25s var(--ease-soft);
+}
+
+.sp-in:focus {
+  outline: none;
+  border-color: #0B1020;
+  box-shadow: 0 0 0 3px rgba(198, 244, 50, 0.35);
+}
+
+.sp-in:focus::placeholder {
+  transform: translateX(4px);
+  opacity: 0.55;
+}
+
+/* Primary Button */
+.sp-btn {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background-color: #0B1020;
+  background-image: linear-gradient(105deg, transparent 30%, rgba(198, 244, 50, 0.18) 48%, rgba(255, 255, 255, 0.25) 50%, rgba(198, 244, 50, 0.18) 52%, transparent 70%);
+  background-repeat: no-repeat;
+  background-size: 250% 100%;
+  color: #C6F432;
+  font: 700 15px 'Bricolage Grotesque', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  animation: btnSheen 4.5s var(--ease-soft-in-out) infinite;
+  transition: background-color 0.3s var(--ease-soft), transform 0.25s var(--ease-soft),
+              box-shadow 0.25s var(--ease-soft);
+}
+
+@keyframes btnSheen {
+  0%        { background-position: 150% 0; }
+  45%, 100% { background-position: -90% 0; }
+}
+
+.sp-btn:hover:not(:disabled) {
+  background-color: #1a2342;
+  transform: translateY(-1.5px);
+  box-shadow: 0 14px 28px -16px rgba(11, 16, 32, 0.6);
+}
+
+.sp-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+  box-shadow: none;
+}
+
+.sp-btn:disabled {
+  cursor: default;
+}
+
+.sp-btn .sp-arrow {
+  transition: transform 0.35s var(--ease-soft);
+}
+
+.sp-btn:hover:not(:disabled) .sp-arrow {
+  transform: translateX(6px);
+}
+
+/* Secondary Button */
+.sp-alt {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: transparent;
+  color: #0B1020;
+  border: 1.5px solid rgba(11, 16, 32, 0.25);
+  font: 600 13px 'Geist', sans-serif;
+  transition: border-color 0.3s var(--ease-soft), background 0.3s var(--ease-soft),
+              transform 0.3s var(--ease-soft);
+}
+
+.sp-alt:hover:not(:disabled) {
+  border-color: rgba(11, 16, 32, 0.55);
+  background: rgba(11, 16, 32, 0.04);
+  transform: translateY(-1px);
+}
+
+.sp-alt:active:not(:disabled) {
+  transform: translateY(0) scale(0.995);
+}
+
+.sp-alt:disabled {
+  cursor: default;
+}
+
+/* Links */
+.sp-a {
+  transition: color 0.3s var(--ease-soft), opacity 0.3s var(--ease-soft);
+}
+
+.sp-a:hover {
+  color: #2f7d1a;
+}
+
+/* ======================================================== */
+/* RESPONSIVE LAYOUT                                        */
+/* ======================================================== */
+
+@media (max-width: 768px) {
+  .sp-wrap {
+    grid-template-columns: 1fr;
+  }
+  .sp-art {
+    display: none;
+  }
+}
+
+/* ======================================================== */
+/* ALIAS DE ESTILOS EN ESPAÑOL                              */
+/* ======================================================== */
+.anim-subida, .anim-elevacion {
+  animation: rise 0.85s var(--ease-soft) both;
+  animation-delay: var(--d, 0ms);
+}
+.marca-lima, .resaltado-texto {
+  background: linear-gradient(#C6F432, #C6F432) no-repeat left center/0% 100%;
+  animation: wipe 0.85s 0.4s var(--ease-soft) forwards;
+  padding: 0 8px;
+  border-radius: 8px;
+  box-decoration-break: clone;
+}
+.campo-entrada {
+  box-sizing: border-box;
+  width: 100%;
+  height: 46px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0B1020;
+  font: 500 14px 'Geist', sans-serif;
+  padding: 0 14px;
+  transition: border-color 0.25s var(--ease-soft), box-shadow 0.25s var(--ease-soft);
+}
+.campo-entrada:focus {
+  outline: none;
+  border-color: #0B1020;
+  box-shadow: 0 0 0 3px rgba(198, 244, 50, 0.35);
+}
+.envoltura-campo {
+  position: relative;
+  transition: transform 0.3s var(--ease-soft);
+}
+.envoltura-campo:focus-within {
+  transform: translateY(-1px);
+}
+.boton-interactivo-principal {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background-color: #0B1020;
+  color: #C6F432;
+  font: 700 15px 'Bricolage Grotesque', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+}
+
