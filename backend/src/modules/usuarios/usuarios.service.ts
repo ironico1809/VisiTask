@@ -275,6 +275,16 @@ export class UsuariosService {
           activo: true,
         },
       });
+
+      // Crear membresía institucional con rol y organización
+      await this.prisma.usuarioOrganizacion.create({
+        data: {
+          id: `rel-${nuevoUsuario.id}`,
+          usuarioId: nuevoUsuario.id,
+          organizacionId: nuevoUsuario.organizacionId || 'org-visitask-global',
+          rol: (nuevoUsuario.rol as any) || 'EMPLEADO',
+        },
+      });
     } catch (err: any) {
       this.logger.warn(`Creación de usuario diferida en BD: ${err?.message}`);
     }
@@ -316,12 +326,32 @@ export class UsuariosService {
     const usuario = await this.obtenerPorId(id);
     usuario.rol = nuevoRol;
     this.logger.log(`Rol de ${usuario.correo} actualizado a ${nuevoRol}`);
+
+    try {
+      await this.prisma.usuarioOrganizacion.updateMany({
+        where: { usuarioId: id },
+        data: { rol: nuevoRol as any },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Persistencia de rol diferida en BD: ${err?.message}`);
+    }
+
     return usuario;
   }
 
   async cambiarEstadoActivo(id: string, activo: boolean): Promise<UsuarioItem> {
     const usuario = await this.obtenerPorId(id);
     usuario.activo = activo;
+
+    try {
+      await this.prisma.usuario.update({
+        where: { id },
+        data: { activo },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Actualización de estado activo diferida en BD: ${err?.message}`);
+    }
+
     return usuario;
   }
 

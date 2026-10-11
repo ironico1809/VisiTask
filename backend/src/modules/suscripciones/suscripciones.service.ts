@@ -343,12 +343,6 @@ export class SuscripcionesService {
           currentPeriodEnd: fechaFin,
         },
       });
-
-      // Actualizar también el nombre de plan en la tabla organizacion
-      await this.prisma.organizacion.update({
-        where: { id: orgId },
-        data: { plan: simulacion.nombrePlan },
-      });
     } catch (err: any) {
       this.logger.warn(`Persistencia diferida en BD de suscripción: ${err?.message}`);
     }
