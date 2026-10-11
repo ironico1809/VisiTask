@@ -170,7 +170,10 @@ const planes = [
     precio: '$15',
     unidad: 'USD / puesto·mes',
     minimo: 'Desde 5 puestos',
+    pruebaGratis: '14 días de prueba gratis · Sin tarjeta requerida',
+    textoBoton: 'Comenzar prueba gratis',
     caracteristicas: [
+      '14 días de prueba completa incluidos',
       'Telemetría ErgoCheck en tiempo real (RULA / REBA)',
       'Análisis en RAM y alertas de pausas activas',
       'Reportes mensuales de salud ocupacional NTS-009',
@@ -185,6 +188,7 @@ const planes = [
     precio: '$3',
     unidad: 'USD / examen',
     minimo: 'Desde 50 exámenes',
+    textoBoton: 'Ver este plan',
     caracteristicas: [
       'Proctoring AI: foco, mirada y segundo rostro',
       'Actas automáticas con hash criptográfico inmutable',
@@ -200,6 +204,7 @@ const planes = [
     precio: '$590',
     unidad: 'USD / mes',
     minimo: 'Puestos y exámenes ilimitados',
+    textoBoton: 'Ver este plan',
     caracteristicas: [
       'Puestos de trabajo ilimitados',
       'Exámenes supervisados ilimitados',
@@ -778,6 +783,12 @@ export function LandingPage() {
                   <span className="plan__unidad">{plan.unidad}</span>
                 </div>
                 <p className="plan__minimo">{plan.minimo}</p>
+                {plan.pruebaGratis && (
+                  <div className="plan__prueba">
+                    <Sparkles size={13} aria-hidden="true" />
+                    <span>{plan.pruebaGratis}</span>
+                  </div>
+                )}
                 <ul className="plan__lista">
                   {plan.caracteristicas.map((caracteristica) => (
                     <li key={caracteristica}>
@@ -786,15 +797,22 @@ export function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  to="/registro"
-                  className={`boton boton--ancho ${
-                    plan.recomendado ? 'boton--lima' : 'boton--borde'
-                  }`}
-                >
-                  {plan.recomendado ? 'Crear cuenta gratis' : 'Ver este plan'}
-                  <ArrowRight className="boton__flecha" size={18} aria-hidden="true" />
-                </Link>
+                <div className="plan__accion">
+                  <Link
+                    to={`/registro?plan=${encodeURIComponent(plan.nombre)}`}
+                    className={`boton boton--ancho ${
+                      plan.recomendado ? 'boton--lima' : 'boton--borde'
+                    }`}
+                  >
+                    {plan.textoBoton}
+                    <ArrowRight className="boton__flecha" size={18} aria-hidden="true" />
+                  </Link>
+                  {plan.pruebaGratis && (
+                    <span className="plan__subnota">
+                      Sin cobro durante los 14 días · Cancela cuando quieras
+                    </span>
+                  )}
+                </div>
               </article>
             ))}
           </div>

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
 import { api } from '../../services/api.js';
 import { Eye, EyeOff, ShieldCheck, CheckCircle2, User, Sparkles } from 'lucide-react';
 
 export const PaginaRegistro: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const planSeleccionado = searchParams.get('plan');
   const { login } = useAuth();
 
   // Estados del Formulario de Registro
@@ -173,6 +175,23 @@ export const PaginaRegistro: React.FC = () => {
             >
               Registro institucional. El identificador de usuario (<strong className="font-mono text-[#0B1020]">ID</strong>) se genera automáticamente en la base de datos.
             </p>
+
+            {planSeleccionado && (
+              <div
+                className="rise mb-2.5 p-2 rounded-xl bg-[#c6f432]/15 border border-[#9ccf22]/40 text-xs text-[#0B1020] flex items-center justify-between gap-2"
+                style={{ '--d': '240ms' } as React.CSSProperties}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Sparkles size={14} className="text-emerald-700 flex-shrink-0" />
+                  <span className="truncate">Plan: <strong>{planSeleccionado}</strong></span>
+                </div>
+                {planSeleccionado.includes('Puesto') && (
+                  <span className="font-mono text-[10px] bg-[#C6F432] text-[#0B1020] px-2 py-0.5 rounded-full font-bold flex-shrink-0">
+                    14 días gratis
+                  </span>
+                )}
+              </div>
+            )}
 
             {errorMsg && (
               <div className="mb-2 p-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-600 animate-pulse">
