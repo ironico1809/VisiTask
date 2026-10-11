@@ -393,7 +393,14 @@ export function LandingPage() {
 
       <main>
         <section className="heroe">
-          <div className="heroe__texto">
+          <div
+            className="heroe__texto"
+            style={{
+              transform: `translateX(-${Math.min(32, progresoScroll * 240)}px)`,
+              opacity: Math.max(0.1, 1 - progresoScroll * 3.5),
+              transition: 'transform 0.06s linear, opacity 0.06s linear',
+            }}
+          >
             <span className="chip-vivo">
               <span className="chip-vivo__latido" />
               Telemetría en el puesto de trabajo
@@ -422,7 +429,16 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="heroe__panel">
+          <div
+            className="heroe__panel"
+            style={{
+              transform: `translateY(${Math.min(50, progresoScroll * 320)}px) rotate(${Math.min(2.5, progresoScroll * 18)}deg)`,
+              transition: 'transform 0.06s linear',
+            }}
+          >
+            {/* Haz de luz de calibración óptica (inspirado en Light Effect de Angelo) */}
+            <div className="haz-luz-calibracion" aria-hidden="true" />
+
             <div className="panel-cromo">
               <span className="panel-cromo__sesion">
                 <span className="panel-cromo__punto" />
