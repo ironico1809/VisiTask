@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { OrganizacionesModule } from './modules/organizaciones/organizaciones.module.js';
 import { UsuariosModule } from './modules/usuarios/usuarios.module.js';
 import { ConsentimientoModule } from './modules/consentimiento/consentimiento.module.js';
+import { SuscripcionesModule } from './modules/suscripciones/suscripciones.module.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ConsentimientoModule } from './modules/consentimiento/consentimiento.mo
     OrganizacionesModule,
     UsuariosModule,
     ConsentimientoModule,
+    SuscripcionesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

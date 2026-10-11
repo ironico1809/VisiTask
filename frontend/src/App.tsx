@@ -45,6 +45,9 @@ export function App() {
               <Route path="/reportes" element={<PaginaReportes />} />
               <Route path="/settings" element={<PaginaConfiguracion />} />
               <Route path="/configuracion" element={<PaginaConfiguracion />} />
+              <Route path="/suscripcion" element={<PaginaConfiguracion />} />
+              <Route path="/billing" element={<PaginaConfiguracion />} />
+              <Route path="/planes" element={<PaginaConfiguracion />} />
 
               {/* Redirección de compatibilidad para consent */}
               <Route path="/consent" element={<Navigate to="/ergonomia" replace />} />
