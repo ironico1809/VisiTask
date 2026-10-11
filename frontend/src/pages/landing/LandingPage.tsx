@@ -2,13 +2,20 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Activity,
   ArrowRight,
   Check,
+  Cpu,
   CreditCard,
+  Database,
+  Eye,
   HeartPulse,
+  Menu,
   ShieldCheck,
   Sparkles,
   Users,
+  X,
+  Zap,
 } from 'lucide-react';
 import './landing.css';
 
@@ -103,6 +110,46 @@ const fichas = [
   'ISO 11226',
   'MediaPipe Pose · 30 FPS',
   'Buffer RAM · 0 KB',
+];
+
+/* Stack biomecánico y tecnológico estilo skill-box de Angelo */
+const stackTecnologico = [
+  {
+    Icono: Activity,
+    titulo: 'MediaPipe Pose AI',
+    subtitulo: '30 FPS · Inferencia local en navegador',
+    badge: 'Computer Vision',
+  },
+  {
+    Icono: ShieldCheck,
+    titulo: 'Protocolo RULA & ISO',
+    subtitulo: 'ISO 11226 · Auditoría SST exportable',
+    badge: 'Normativa Oficial',
+  },
+  {
+    Icono: Cpu,
+    titulo: 'WebAssembly Engine',
+    subtitulo: '0 ms Latencia de procesamiento',
+    badge: 'WASM High-Speed',
+  },
+  {
+    Icono: Zap,
+    titulo: 'Buffer RAM Efímero',
+    subtitulo: '0 KB Video almacenado en disco',
+    badge: 'Privacidad Total',
+  },
+  {
+    Icono: Database,
+    titulo: 'PostgreSQL & Prisma',
+    subtitulo: 'Cifrado de grado empresarial SST',
+    badge: 'Persistencia Segura',
+  },
+  {
+    Icono: Eye,
+    titulo: 'Telemetría Biométrica',
+    subtitulo: 'Monitoreo postural continuo y alertas',
+    badge: 'Monitoreo SST',
+  },
 ];
 
 /* Perfil público al que apunta la experiencia */
@@ -268,6 +315,7 @@ export function LandingPage() {
   const [zonaEspina, setZonaEspina] = useState('C1-C7 · Cervical');
   const [mostrarHud, setMostrarHud] = useState(false);
   const [indiceTelemetria, setIndiceTelemetria] = useState(0);
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -389,7 +437,82 @@ export function LandingPage() {
             Crear cuenta
           </Link>
         </div>
+
+        {/* Botón hamburguesa móvil estilo Portfolio */}
+        <button
+          type="button"
+          className="boton-hamburguesa"
+          onClick={() => setMenuMovilAbierto(true)}
+          aria-label="Abrir menú de navegación"
+        >
+          <Menu size={24} />
+        </button>
       </header>
+
+      {/* Menú móvil desplegable a pantalla completa (Portfolio de Angelo) */}
+      <div
+        className={`menu-movil ${menuMovilAbierto ? 'menu-movil--abierto' : ''}`}
+        aria-hidden={!menuMovilAbierto}
+      >
+        <div className="menu-movil__cerrar">
+          <button
+            type="button"
+            className="menu-movil__boton-cerrar"
+            onClick={() => setMenuMovilAbierto(false)}
+            aria-label="Cerrar menú"
+          >
+            <X size={30} />
+          </button>
+        </div>
+        <ul className="menu-movil__lista">
+          <li>
+            <a href="#jornada" onClick={() => setMenuMovilAbierto(false)}>
+              La jornada
+            </a>
+          </li>
+          <li>
+            <a href="#beneficios" onClick={() => setMenuMovilAbierto(false)}>
+              Beneficios
+            </a>
+          </li>
+          <li>
+            <a href="#proceso" onClick={() => setMenuMovilAbierto(false)}>
+              Cómo funciona
+            </a>
+          </li>
+          <li>
+            <a href="#modulos" onClick={() => setMenuMovilAbierto(false)}>
+              Módulos
+            </a>
+          </li>
+          <li>
+            <a href="#planes" onClick={() => setMenuMovilAbierto(false)}>
+              Planes
+            </a>
+          </li>
+          <li>
+            <a href="#preguntas" onClick={() => setMenuMovilAbierto(false)}>
+              Preguntas
+            </a>
+          </li>
+        </ul>
+        <div className="menu-movil__acciones">
+          <Link
+            to="/login"
+            className="boton boton--borde boton--ancho"
+            onClick={() => setMenuMovilAbierto(false)}
+          >
+            Iniciar sesión
+          </Link>
+          <Link
+            to="/registro"
+            className="boton boton--lima boton--ancho"
+            onClick={() => setMenuMovilAbierto(false)}
+          >
+            Crear cuenta gratis
+          </Link>
+        </div>
+      </div>
 
       <main>
         <section className="heroe">
@@ -556,6 +679,15 @@ export function LandingPage() {
             <span className="heroe__scroll-flecha">↓</span>
           </div>
         </section>
+
+        {/* Banner SVG Stroke con animación de trazo continuo (Portfolio de Angelo) */}
+        <div className="banner-stroke" aria-hidden="true">
+          <svg viewBox="0 0 1600 240" className="banner-stroke__svg">
+            <text x="50%" y="62%" textAnchor="middle">
+              VISITASK AI
+            </text>
+          </svg>
+        </div>
 
         <section id="beneficios" className="seccion seccion--beneficios">
           <div className="seccion__encabezado revelar">
@@ -844,6 +976,22 @@ export function LandingPage() {
               </span>
             ))}
           </div>
+
+          {/* Grilla tecnológica interactiva estilo Skill-Box (Portfolio de Angelo) */}
+          <div className="tecnologias-grid revelar" style={{ '--d': '160ms' } as CSSProperties}>
+            {stackTecnologico.map(({ Icono, titulo, subtitulo, badge }) => (
+              <div key={titulo} className="caja-habilidad" tabIndex={0}>
+                <div className="caja-habilidad__icono">
+                  <Icono size={26} aria-hidden="true" />
+                </div>
+                <div className="caja-habilidad__cuerpo">
+                  <span className="caja-habilidad__badge">{badge}</span>
+                  <h4 className="caja-habilidad__titulo">{titulo}</h4>
+                  <p className="caja-habilidad__subtitulo">{subtitulo}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section id="planes" className="seccion seccion--planes">
@@ -943,6 +1091,14 @@ export function LandingPage() {
 
         <section className="seccion seccion--cierre">
           <div className="cierre revelar">
+            {/* SVG stroke typography de cierre estilo Portfolio */}
+            <div className="cierre__stroke" aria-hidden="true">
+              <svg viewBox="0 0 1200 200" className="banner-stroke__svg banner-stroke__svg--cierre">
+                <text x="50%" y="65%" textAnchor="middle">
+                  ERGOCHECK AI
+                </text>
+              </svg>
+            </div>
             <h2 className="cierre__titulo">Empieza a medir lo que hoy solo intuyes.</h2>
             <p className="cierre__texto">
               Crea tu cuenta, invita a tu equipo y mira la primera evaluación postural en minutos.
