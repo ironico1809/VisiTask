@@ -6,6 +6,7 @@ import { PlantillaPanel } from './components/diseno/PlantillaPanel.js';
 
 // Páginas de la Aplicación en Español
 import { PaginaInicioSesion } from './pages/autenticacion/PaginaInicioSesion.js';
+import { PaginaRegistro } from './pages/autenticacion/PaginaRegistro.js';
 import { PaginaPanelPrincipal } from './pages/panel/PaginaPanelPrincipal.js';
 import { PaginaMonitorPostura } from './pages/ergonomia/PaginaMonitorPostura.js';
 import { PaginaSupervisionExamen } from './pages/supervision/PaginaSupervisionExamen.js';
@@ -20,10 +21,12 @@ export function App() {
     <ProveedorAutenticacion>
       <BrowserRouter>
         <Routes>
-          {/* Ruta Pública: Acceso e Inicio de Sesión */}
+          {/* Ruta Pública: Acceso e Inicio de Sesión y Registro */}
           <Route element={<RutaPublica />}>
             <Route path="/login" element={<PaginaInicioSesion />} />
             <Route path="/iniciar-sesion" element={<PaginaInicioSesion />} />
+            <Route path="/registro" element={<PaginaRegistro />} />
+            <Route path="/register" element={<PaginaRegistro />} />
           </Route>
 
           {/* Rutas Protegidas: Panel con Barra Lateral y Plantilla Unificada */}

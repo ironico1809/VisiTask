@@ -11,4 +11,16 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     return this.authService.validateAndLogin(loginDto);
   }
+
+  @Post('registro')
+  @HttpCode(HttpStatus.CREATED)
+  async registro(@Body() dto: any): Promise<AuthResponse> {
+    return this.authService.register(dto);
+  }
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() dto: any): Promise<AuthResponse> {
+    return this.authService.register(dto);
+  }
 }

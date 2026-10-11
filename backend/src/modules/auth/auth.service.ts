@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -245,5 +245,114 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('Credenciales inválidas. Verifica tu correo y contraseña.');
+  }
+
+  async register(registroDto: any): Promise<RespuestaAutenticacion> {
+    const correo = (registroDto.correo || registroDto.email || '').trim().toLowerCase();
+    const nombre = (registroDto.nombre || registroDto.firstName || '').trim();
+    const apellido = (registroDto.apellido || registroDto.lastName || '').trim();
+    const clave = (registroDto.clave || registroDto.password || '').trim();
+    const rol = (registroDto.rol || registroDto.role || 'EMPLEADO').trim();
+    const organizacionId = registroDto.organizacionId || 'org-visitask-global';
+    const nombreOrganizacion = registroDto.nombreOrganizacion || 'Visitask Global Enterprise';
+
+    if (!correo || !nombre || !apellido || !clave) {
+      throw new BadRequestException('Todos los campos son obligatorios (nombre, apellido, correo y contraseña).');
+    }
+
+    if (clave.length < 5) {
+      throw new BadRequestException('La contraseña debe tener al menos 5 caracteres.');
+    }
+
+    // 1. Verificar si ya existe en directorio en memoria
+    const existeEnMemoria = this.usuariosDirectorio.find((u) => u.correo.toLowerCase() === correo);
+    if (existeEnMemoria) {
+      throw new BadRequestException(`El correo electrónico ${correo} ya está registrado en el sistema.`);
+    }
+
+    // 2. Verificar si ya existe en base de datos PostgreSQL
+    try {
+      const existeEnBd = await this.prisma.usuario.findUnique({
+        where: { correo },
+      });
+      if (existeEnBd) {
+        throw new BadRequestException(`El correo electrónico ${correo} ya está registrado.`);
+      }
+    } catch (e: any) {
+      this.registrador.warn(`Verificación diferida en BD: ${e?.message}`);
+    }
+
+    const nuevoId = `usr-${Date.now()}`;
+    const fotoUrl = `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=faces`;
+    const claveHash = await bcrypt.hash(clave, 10);
+
+    // 3. Persistir en base de datos PostgreSQL Supabase
+    try {
+      await this.prisma.usuario.create({
+        data: {
+          id: nuevoId,
+          correo,
+          claveHash,
+          nombre,
+          apellido,
+          fotoUrl,
+          activo: true,
+        },
+      });
+
+      // Crear membresía en la organización
+      await this.prisma.usuarioOrganizacion.create({
+        data: {
+          id: `rel-${nuevoId}`,
+          usuarioId: nuevoId,
+          organizacionId,
+          rol: rol as any,
+        },
+      });
+    } catch (err: any) {
+      this.registrador.warn(`Persistencia diferida en BD al registrar: ${err?.message}`);
+    }
+
+    // 4. Agregar al directorio en memoria
+    this.usuariosDirectorio.push({
+      id: nuevoId,
+      correo,
+      nombre,
+      apellido,
+      rol,
+      organizacionId,
+      nombreOrganizacion,
+      fotoUrl,
+    });
+
+    // 5. Generar token JWT para inicio de sesión inmediato
+    const cargaJwt = {
+      sub: nuevoId,
+      email: correo,
+      role: rol,
+      organizationId: organizacionId,
+    };
+
+    const token = this.jwtService.sign(cargaJwt);
+
+    return {
+      token,
+      user: {
+        id: nuevoId,
+        email: correo,
+        correo,
+        firstName: nombre,
+        nombre,
+        lastName: apellido,
+        apellido,
+        role: rol,
+        rol,
+        organizationId: organizacionId,
+        organizationName: nombreOrganizacion,
+        nombreOrganizacion,
+        avatarUrl: fotoUrl,
+        fotoUrl,
+      },
+    };
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
 import { api } from '../../services/api.js';
 import { Eye, EyeOff } from 'lucide-react';
@@ -132,7 +132,10 @@ export const PaginaInicioSesion: React.FC = () => {
               </span>
             </div>
             <span className="font-medium text-xs sm:text-sm text-slate-500">
-              ¿No tienes cuenta? <a className="sp-a" href="#">Solicitar demo</a>
+              ¿No tienes cuenta?{' '}
+              <Link className="sp-a font-bold text-[#0B1020]" to="/registro">
+                Regístrate gratis
+              </Link>
             </span>
           </header>
 
