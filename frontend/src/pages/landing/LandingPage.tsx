@@ -316,6 +316,15 @@ export function LandingPage() {
   const [mostrarHud, setMostrarHud] = useState(false);
   const [indiceTelemetria, setIndiceTelemetria] = useState(0);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+  const [hojaActiva, setHojaActiva] = useState(1);
+
+  const irASiguienteHoja = (indiceActual: number) => {
+    const siguienteIndice = indiceActual >= 11 ? 1 : indiceActual + 1;
+    const elemento = document.querySelector<HTMLElement>(`[data-hoja="${siguienteIndice}"]`);
+    if (elemento) {
+      elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -357,6 +366,65 @@ export function LandingPage() {
       } else {
         setZonaEspina('S1 · Sacro');
       }
+
+      // Cálculo del efecto 3D de paso de página al hacer scroll en cada sección
+      const hojas = raiz.querySelectorAll<HTMLElement>('.hoja-pagina');
+      const alturaVentana = window.innerHeight;
+      let indiceHojaVisible = 1;
+
+      hojas.forEach((hoja, i) => {
+        const rect = hoja.getBoundingClientRect();
+        const altura = rect.height || 600;
+
+        if (rect.top <= alturaVentana * 0.45 && rect.bottom >= alturaVentana * 0.25) {
+          indiceHojaVisible = i + 1;
+        }
+
+        // Si la hoja está fuera del viewport, limpiamos transformaciones para máximo rendimiento
+        if (rect.bottom < -200 || rect.top > alturaVentana + 200) {
+          hoja.style.removeProperty('--rotacion-x');
+          hoja.style.removeProperty('--desplazamiento-y');
+          hoja.style.removeProperty('--escala-hoja');
+          hoja.style.removeProperty('--opacidad-sombra');
+          return;
+        }
+
+        // Caso 1: La hoja está pasando el límite superior y curvándose hacia atrás (paso de página hacia arriba)
+        if (rect.top < 0 && rect.bottom > 0) {
+          const fraccionSalida = Math.min(1, Math.max(0, -rect.top / (altura * 0.85)));
+          const rotacionX = fraccionSalida * -8.5; // Grados de curvatura física del papel
+          const desplazamientoY = fraccionSalida * -14;
+          const escala = 1 - fraccionSalida * 0.035;
+          const opacidadSombra = fraccionSalida * 0.36;
+
+          hoja.style.setProperty('--rotacion-x', `${rotacionX.toFixed(2)}deg`);
+          hoja.style.setProperty('--desplazamiento-y', `${desplazamientoY.toFixed(1)}px`);
+          hoja.style.setProperty('--escala-hoja', escala.toFixed(3));
+          hoja.style.setProperty('--opacidad-sombra', opacidadSombra.toFixed(2));
+          hoja.style.setProperty('--origen-pliegue', 'top center');
+        }
+        // Caso 2: La hoja está entrando desde el borde inferior desplegándose
+        else if (rect.top > 0 && rect.top < alturaVentana) {
+          const fraccionEntrada = Math.min(1, Math.max(0, (alturaVentana - rect.top) / alturaVentana));
+          const rotacionX = (1 - fraccionEntrada) * 6; // Se despliega hacia adelante
+          const desplazamientoY = (1 - fraccionEntrada) * 16;
+          const escala = 0.975 + fraccionEntrada * 0.025;
+          const opacidadSombra = (1 - fraccionEntrada) * 0.2;
+
+          hoja.style.setProperty('--rotacion-x', `${rotacionX.toFixed(2)}deg`);
+          hoja.style.setProperty('--desplazamiento-y', `${desplazamientoY.toFixed(1)}px`);
+          hoja.style.setProperty('--escala-hoja', escala.toFixed(3));
+          hoja.style.setProperty('--opacidad-sombra', opacidadSombra.toFixed(2));
+          hoja.style.setProperty('--origen-pliegue', 'bottom center');
+        } else {
+          hoja.style.setProperty('--rotacion-x', '0deg');
+          hoja.style.setProperty('--desplazamiento-y', '0px');
+          hoja.style.setProperty('--escala-hoja', '1');
+          hoja.style.setProperty('--opacidad-sombra', '0');
+        }
+      });
+
+      setHojaActiva(indiceHojaVisible);
     };
     const alDesplazar = () => {
       pendiente ||= requestAnimationFrame(actualizar);
@@ -406,7 +474,7 @@ export function LandingPage() {
         <div className="eje-espina__nodo">
           <span className="eje-espina__pulso" />
           <span className="eje-espina__etiqueta">
-            {zonaEspina} ({Math.round(progresoScroll * 100)}%)
+            {zonaEspina} · Hoja {hojaActiva}/11 ({Math.round(progresoScroll * 100)}%)
           </span>
         </div>
       </div>
@@ -514,8 +582,20 @@ export function LandingPage() {
         </div>
       </div>
 
-      <main>
-        <section className="heroe">
+      <main className="contenedor-hojas">
+        <section className="heroe hoja-pagina" id="heroe" data-hoja="1">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(1)}
+            title="Siguiente hoja (Beneficios)"
+            aria-label="Paso de página: ir a Beneficios"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 01 / 11 · Portada</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div
             className="heroe__texto"
             style={{
@@ -689,7 +769,19 @@ export function LandingPage() {
           </svg>
         </div>
 
-        <section id="beneficios" className="seccion seccion--beneficios">
+        <section id="beneficios" className="seccion seccion--beneficios hoja-pagina" data-hoja="2">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(2)}
+            title="Siguiente hoja (La jornada)"
+            aria-label="Paso de página: ir a La jornada"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 02 / 11 · Beneficios</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="seccion__encabezado revelar">
             <h2 className="titulo-seccion">Lo que cambia desde el primer día.</h2>
             <p className="entrada-seccion">
@@ -719,7 +811,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="jornada" className="seccion seccion--jornada">
+        <section id="jornada" className="seccion seccion--jornada hoja-pagina" data-hoja="3">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(3)}
+            title="Siguiente hoja (Cómo funciona)"
+            aria-label="Paso de página: ir a Cómo funciona"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 03 / 11 · Jornada</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="seccion__encabezado revelar">
             <h2 className="titulo-seccion">La fatiga no avisa: se acumula.</h2>
             <p className="entrada-seccion">
@@ -766,7 +870,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="proceso" className="seccion seccion--proceso">
+        <section id="proceso" className="seccion seccion--proceso hoja-pagina" data-hoja="4">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(4)}
+            title="Siguiente hoja (Módulos)"
+            aria-label="Paso de página: ir a Módulos"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 04 / 11 · Proceso</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="seccion__encabezado revelar">
             <h2 className="titulo-seccion">Tres pasos, cero fricción.</h2>
             <p className="entrada-seccion">
@@ -789,7 +905,19 @@ export function LandingPage() {
           </ol>
         </section>
 
-        <section id="modulos" className="seccion seccion--modulos">
+        <section id="modulos" className="seccion seccion--modulos hoja-pagina" data-hoja="5">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(5)}
+            title="Siguiente hoja (Testimonios)"
+            aria-label="Paso de página: ir a Testimonios"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 05 / 11 · Módulos</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="placa observar">
             <div className="placa__diagrama" aria-hidden="true">
               <svg viewBox="0 0 200 560" className="placa__svg">
@@ -852,7 +980,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="testimonios" className="seccion seccion--testimonios">
+        <section id="testimonios" className="seccion seccion--testimonios hoja-pagina" data-hoja="6">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(6)}
+            title="Siguiente hoja (Privacidad)"
+            aria-label="Paso de página: ir a Privacidad"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 06 / 11 · Testimonios</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="seccion__encabezado revelar">
             <h2 className="titulo-seccion">Equipos que ya se sientan mejor.</h2>
             <p className="entrada-seccion">
@@ -882,7 +1022,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="privacidad" className="seccion seccion--privacidad">
+        <section id="privacidad" className="seccion seccion--privacidad hoja-pagina" data-hoja="7">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(7)}
+            title="Siguiente hoja (Resultados)"
+            aria-label="Paso de página: ir a Resultados"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 07 / 11 · Privacidad</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="privacidad observar">
             <div className="privacidad__texto">
               <span className="chip-vivo chip-vivo--tenue">
@@ -925,7 +1077,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="resultados" className="seccion seccion--resultados">
+        <section id="resultados" className="seccion seccion--resultados hoja-pagina" data-hoja="8">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(8)}
+            title="Siguiente hoja (Planes)"
+            aria-label="Paso de página: ir a Planes"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 08 / 11 · Resultados</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="seccion__encabezado revelar">
             <h2 className="titulo-seccion">Resultados que una auditoría acepta.</h2>
             <p className="entrada-seccion">
@@ -994,7 +1158,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="planes" className="seccion seccion--planes">
+        <section id="planes" className="seccion seccion--planes hoja-pagina" data-hoja="9">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(9)}
+            title="Siguiente hoja (Preguntas frecuentes)"
+            aria-label="Paso de página: ir a Preguntas frecuentes"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 09 / 11 · Planes</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="seccion__encabezado revelar">
             <h2 className="titulo-seccion">Planes para cada equipo.</h2>
             <p className="entrada-seccion">
@@ -1056,7 +1232,19 @@ export function LandingPage() {
           </p>
         </section>
 
-        <section id="preguntas" className="seccion seccion--faq">
+        <section id="preguntas" className="seccion seccion--faq hoja-pagina" data-hoja="10">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(10)}
+            title="Siguiente hoja (Cierre y Comprobante)"
+            aria-label="Paso de página: ir a Cierre"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 10 / 11 · Preguntas</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="seccion__encabezado revelar">
             <h2 className="titulo-seccion">Las dudas de siempre, respondidas.</h2>
             <p className="entrada-seccion">
@@ -1089,7 +1277,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="seccion seccion--cierre">
+        <section className="seccion seccion--cierre hoja-pagina" data-hoja="11" id="cierre">
+          {/* Doblez táctil de hoja y sombra física de curvatura */}
+          <button
+            type="button"
+            className="hoja-pagina__doblez"
+            onClick={() => irASiguienteHoja(11)}
+            title="Volver a la portada (Hoja 01)"
+            aria-label="Paso de página: volver a la portada"
+          >
+            <span className="hoja-pagina__doblez-icono" />
+            <span>Hoja 11 / 11 · Cierre</span>
+          </button>
+          <div className="hoja-pagina__sombra-pliegue" aria-hidden="true" />
           <div className="cierre revelar">
             {/* SVG stroke typography de cierre estilo Portfolio */}
             <div className="cierre__stroke" aria-hidden="true">
@@ -1174,7 +1374,9 @@ export function LandingPage() {
         </div>
         <div className="hud-scroll__datos">
           <span className="hud-scroll__zona">{zonaEspina}</span>
-          <span className="hud-scroll__porcentaje font-mono">{Math.round(progresoScroll * 100)}%</span>
+          <span className="hud-scroll__porcentaje font-mono">
+            Hoja {hojaActiva}/11 · {Math.round(progresoScroll * 100)}%
+          </span>
         </div>
         <div className="hud-scroll__flecha">
           <ArrowRight className="-rotate-90" size={13} />

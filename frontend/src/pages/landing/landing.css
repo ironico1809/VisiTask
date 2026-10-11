@@ -923,6 +923,109 @@
   color: #5ee0a0;
 }
 
+/* ── Efecto 3D de Paso de Página al hacer Scroll (Transición de Hojas) ───── */
+.contenedor-hojas {
+  perspective: 1600px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.hoja-pagina {
+  position: relative;
+  transform-origin: var(--origen-pliegue, top center);
+  transform: perspective(1600px)
+             rotateX(var(--rotacion-x, 0deg))
+             translateY(var(--desplazamiento-y, 0px))
+             scale(var(--escala-hoja, 1));
+  transition: transform 0.06s linear, box-shadow 0.2s ease;
+  will-change: transform;
+  border-radius: 20px;
+}
+
+/* Sombra gradual y pliegue de hoja física de libro/catálogo */
+.hoja-pagina__sombra-pliegue {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.95)) 0%,
+    rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.45)) 12%,
+    transparent 28%,
+    transparent 72%,
+    rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.55)) 100%
+  );
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4),
+              0 -12px 28px -6px rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.65));
+  z-index: 25;
+  transition: opacity 0.08s linear;
+}
+
+/* Doblez táctil en esquina ("Dog-ear" / Doblez de página interactivo) */
+.hoja-pagina__doblez {
+  position: absolute;
+  top: 14px;
+  right: clamp(14px, 3.5vw, 42px);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  background: rgba(11, 16, 32, 0.04);
+  border: 1px solid rgba(11, 16, 32, 0.1);
+  border-radius: 8px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pizarra);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  z-index: 30;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease,
+              box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.hoja-pagina__doblez:hover {
+  transform: translateY(-2px) scale(1.05);
+  background: #ffffff;
+  border-color: var(--lima);
+  color: var(--tinta);
+  box-shadow: 0 6px 14px -4px rgba(198, 244, 50, 0.4), 0 0 0 1px var(--lima);
+}
+
+.hoja-pagina__doblez-icono {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--lima);
+  border-bottom: 2px solid var(--lima);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.hoja-pagina__doblez:hover .hoja-pagina__doblez-icono {
+  transform: rotate(45deg) translate(1px, 1px);
+}
+
+/* Doblez en secciones oscuras (privacidad y cierre) */
+.seccion--privacidad.hoja-pagina .hoja-pagina__doblez,
+.seccion--cierre.hoja-pagina .hoja-pagina__doblez {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #c7d0dc;
+}
+
+.seccion--privacidad.hoja-pagina .hoja-pagina__doblez:hover,
+.seccion--cierre.hoja-pagina .hoja-pagina__doblez:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--lima);
+  color: #ffffff;
+  box-shadow: 0 6px 16px -4px rgba(198, 244, 50, 0.45);
+}
+
 /* ── Secciones genéricas ──────────────────────────────────────────────────── */
 .seccion {
   padding: clamp(64px, 9vw, 132px) var(--gutter);
@@ -2437,5 +2540,11 @@
   }
   .instrumento__aguja {
     stroke-dashoffset: var(--desplazamiento-final) !important;
+  }
+  .hoja-pagina {
+    transform: none !important;
+  }
+  .hoja-pagina__sombra-pliegue {
+    display: none !important;
   }
 }
