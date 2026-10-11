@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
 import { api } from '../../services/api.js';
-import { Eye, EyeOff, ShieldCheck, CheckCircle2, User, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, CheckCircle2, User, Sparkles, CreditCard, Lock } from 'lucide-react';
 
 export const PaginaRegistro: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +21,31 @@ export const PaginaRegistro: React.FC = () => {
   const [nuevaOrganizacion, setNuevaOrganizacion] = useState('');
   const [esNuevaOrg, setEsNuevaOrg] = useState(false);
   const [rol, setRol] = useState('EMPLEADO');
+
+  // Estados de Tarjeta de Crédito Requerida para la Prueba de 14 Días
+  const [numeroTarjeta, setNumeroTarjeta] = useState('');
+  const [expiracionTarjeta, setExpiracionTarjeta] = useState('');
+  const [cvcTarjeta, setCvcTarjeta] = useState('');
+  const [titularTarjeta, setTitularTarjeta] = useState('');
+
+  const handleNumeroTarjetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
+    const formatted = raw.replace(/(\d{4})(?=\d)/g, '$1 ');
+    setNumeroTarjeta(formatted);
+  };
+
+  const handleExpiracionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (raw.length >= 3) {
+      raw = raw.slice(0, 2) + '/' + raw.slice(2);
+    }
+    setExpiracionTarjeta(raw);
+  };
+
+  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCvcTarjeta(raw);
+  };
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -64,6 +89,33 @@ export const PaginaRegistro: React.FC = () => {
       setShake(true);
       setTimeout(() => setShake(false), 450);
       return;
+    }
+
+    if (planSeleccionado?.includes('Puesto') || numeroTarjeta.trim().length > 0) {
+      if (!titularTarjeta.trim()) {
+        setErrorMsg('Por favor ingresa el nombre del titular de la tarjeta para activar la prueba.');
+        setShake(true);
+        setTimeout(() => setShake(false), 450);
+        return;
+      }
+      if (numeroTarjeta.replace(/\s/g, '').length < 15) {
+        setErrorMsg('Por favor ingresa un número de tarjeta válido (16 dígitos).');
+        setShake(true);
+        setTimeout(() => setShake(false), 450);
+        return;
+      }
+      if (expiracionTarjeta.length < 5) {
+        setErrorMsg('Por favor ingresa la fecha de vencimiento (MM/AA).');
+        setShake(true);
+        setTimeout(() => setShake(false), 450);
+        return;
+      }
+      if (cvcTarjeta.length < 3) {
+        setErrorMsg('Por favor ingresa el código CVC de seguridad de la tarjeta.');
+        setShake(true);
+        setTimeout(() => setShake(false), 450);
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -186,8 +238,8 @@ export const PaginaRegistro: React.FC = () => {
                   <span className="truncate">Plan: <strong>{planSeleccionado}</strong></span>
                 </div>
                 {planSeleccionado.includes('Puesto') && (
-                  <span className="font-mono text-[10px] bg-[#C6F432] text-[#0B1020] px-2 py-0.5 rounded-full font-bold flex-shrink-0">
-                    14 días gratis
+                  <span className="font-mono text-[10px] bg-[#0B1020] text-[#C6F432] px-2 py-0.5 rounded-full font-bold flex-shrink-0">
+                    Tarjeta requerida · $0 hoy
                   </span>
                 )}
               </div>
@@ -348,6 +400,93 @@ export const PaginaRegistro: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Sección de Tarjeta de Crédito Requerida para la Prueba */}
+              <div
+                className="rise p-3 rounded-xl bg-slate-100/90 border border-slate-300/80 text-xs text-[#0B1020]"
+                style={{ '--d': '460ms' } as React.CSSProperties}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                    <CreditCard className="w-4 h-4 text-emerald-700" />
+                    <span>Tarjeta de Crédito Requerida</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                    $0.00 cobro hoy
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-600 mb-2 leading-snug">
+                  Se requiere tarjeta para validar la cuenta y activar los <strong>14 días de prueba</strong>. El primer cobro ($15/puesto) se efectuará recién al terminar la prueba. Cancela cuando quieras.
+                </p>
+
+                <div className="space-y-2">
+                  <div>
+                    <label htmlFor="titular-tarjeta" className="block mb-0.5 text-[10px] font-semibold text-slate-700 uppercase tracking-wider">
+                      Nombre en la tarjeta *
+                    </label>
+                    <input
+                      id="titular-tarjeta"
+                      type="text"
+                      className="sp-in text-xs py-1.5"
+                      placeholder="Ej. Juan Pérez"
+                      value={titularTarjeta}
+                      onChange={(e) => setTitularTarjeta(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="num-tarjeta" className="block mb-0.5 text-[10px] font-semibold text-slate-700 uppercase tracking-wider">
+                      Número de tarjeta *
+                    </label>
+                    <input
+                      id="num-tarjeta"
+                      type="text"
+                      className="sp-in text-xs py-1.5 font-mono"
+                      placeholder="4532 •••• •••• 8890"
+                      value={numeroTarjeta}
+                      onChange={handleNumeroTarjetaChange}
+                      maxLength={19}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label htmlFor="exp-tarjeta" className="block mb-0.5 text-[10px] font-semibold text-slate-700 uppercase tracking-wider">
+                        Vencimiento *
+                      </label>
+                      <input
+                        id="exp-tarjeta"
+                        type="text"
+                        className="sp-in text-xs py-1.5 font-mono"
+                        placeholder="MM/AA"
+                        value={expiracionTarjeta}
+                        onChange={handleExpiracionChange}
+                        maxLength={5}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="cvc-tarjeta" className="block mb-0.5 text-[10px] font-semibold text-slate-700 uppercase tracking-wider">
+                        CVC / CVV *
+                      </label>
+                      <input
+                        id="cvc-tarjeta"
+                        type="password"
+                        className="sp-in text-xs py-1.5 font-mono"
+                        placeholder="•••"
+                        value={cvcTarjeta}
+                        onChange={handleCvcChange}
+                        maxLength={4}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-slate-200/80 flex items-center gap-1.5 text-[10px] text-slate-500">
+                  <Lock className="w-3 h-3 text-slate-400" />
+                  <span>Cifrado SSL de 256 bits · Pasarela de pago segura</span>
+                </div>
+              </div>
 
               {/* Botón Principal de Registro */}
               <div className="rise pt-1" style={{ '--d': '490ms' } as React.CSSProperties}>

@@ -32,12 +32,27 @@
   color: var(--tinta);
 }
 
+/* ── Barra de Progreso Superior (Scroll Tracker Global) ─────────────────── */
+.barra-scroll-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3.5px;
+  background: linear-gradient(90deg, var(--lima) 0%, #a3e635 60%, var(--lima-oscura) 100%);
+  transform-origin: 0% 50%;
+  z-index: 1000;
+  box-shadow: 0 0 12px rgba(198, 244, 50, 0.75);
+  pointer-events: none;
+  transition: transform 0.08s linear;
+}
+
 /* ── Eje espina: se rellena con el progreso de scroll ─────────────────────── */
 .eje-espina {
   position: fixed;
   top: 0;
   left: 48px;
-  z-index: 5;
+  z-index: 25;
   width: 2px;
   height: 100vh;
   background: #0b10201a;
@@ -52,19 +67,138 @@
   height: calc(var(--progreso, 0) * 100%);
   background: linear-gradient(var(--lima), var(--lima-oscura));
   border-radius: 999px;
+  box-shadow: 0 0 8px rgba(198, 244, 50, 0.5);
 }
 
 .eje-espina__nodo {
   position: absolute;
   top: calc(var(--progreso, 0) * 100%);
   left: 50%;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   background: var(--lima);
-  border-radius: 3px;
+  border-radius: 4px;
   transform: translate(-50%, -50%) rotate(45deg);
-  box-shadow: 0 0 0 4px #c6f43238;
+  box-shadow: 0 0 0 4px #c6f4324d, 0 0 16px rgba(198, 244, 50, 0.8);
   transition: top 0.12s linear;
+}
+
+.eje-espina__pulso {
+  position: absolute;
+  inset: -5px;
+  border-radius: 6px;
+  border: 1.5px solid var(--lima);
+  animation: pulso-espina 2s infinite ease-out;
+  opacity: 0.8;
+}
+
+@keyframes pulso-espina {
+  0% { transform: scale(0.8); opacity: 0.9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.eje-espina__etiqueta {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+  white-space: nowrap;
+  background: #0b1020ee;
+  color: #fff;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #c6f43255;
+  box-shadow: 0 4px 12px rgba(11, 16, 32, 0.25);
+  pointer-events: none;
+}
+
+/* ── HUD Flotante de Desplazamiento y Scroll a Inicio ────────────────────── */
+.hud-scroll {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 10px;
+  background: #0b1020f0;
+  color: #fff;
+  border: 1px solid #c6f4324d;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px -10px rgba(11, 16, 32, 0.4), 0 0 14px rgba(198, 244, 50, 0.2);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  pointer-events: none;
+  transition: opacity 0.3s var(--curva), transform 0.3s var(--curva), border-color 0.2s, background 0.2s;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.hud-scroll--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.hud-scroll:hover {
+  background: #0b1020;
+  border-color: var(--lima);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 14px 34px -10px rgba(11, 16, 32, 0.5), 0 0 20px rgba(198, 244, 50, 0.4);
+}
+
+.hud-scroll__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffffff14;
+  color: var(--lima);
+}
+
+.hud-scroll__datos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.hud-scroll__zona {
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: 'Geist Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hud-scroll__porcentaje {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hud-scroll__flecha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--lima);
+  color: var(--tinta);
+  margin-left: 2px;
+  transition: transform 0.2s var(--curva);
+}
+
+.hud-scroll:hover .hud-scroll__flecha {
+  transform: translateY(-2px);
 }
 
 /* ── Cabecera ─────────────────────────────────────────────────────────────── */

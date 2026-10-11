@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Check,
+  CreditCard,
   HeartPulse,
   ShieldCheck,
   Sparkles,
@@ -170,10 +171,11 @@ const planes = [
     precio: '$15',
     unidad: 'USD / puesto·mes',
     minimo: 'Desde 5 puestos',
-    pruebaGratis: '14 días de prueba gratis · Sin tarjeta requerida',
-    textoBoton: 'Comenzar prueba gratis',
+    pruebaGratis: '14 días de prueba · Requiere tarjeta de crédito',
+    textoBoton: 'Comenzar prueba con tarjeta',
     caracteristicas: [
       '14 días de prueba completa incluidos',
+      'Requiere registrar tarjeta de crédito ($0 hoy)',
       'Telemetría ErgoCheck en tiempo real (RULA / REBA)',
       'Análisis en RAM y alertas de pausas activas',
       'Reportes mensuales de salud ocupacional NTS-009',
@@ -256,6 +258,9 @@ export function LandingPage() {
   const [indiceRitmo, setIndiceRitmo] = useState<number | null>(null);
   const [moduloActivo, setModuloActivo] = useState(0);
   const [faqAbierta, setFaqAbierta] = useState<number | null>(0);
+  const [progresoScroll, setProgresoScroll] = useState(0);
+  const [zonaEspina, setZonaEspina] = useState('C1-C7 · Cervical');
+  const [mostrarHud, setMostrarHud] = useState(false);
 
   useEffect(() => {
     const { body, documentElement } = document;
@@ -277,6 +282,19 @@ export function LandingPage() {
       const total = scrollHeight - clientHeight;
       const progreso = total > 0 ? Math.min(1, Math.max(0, scrollTop / total)) : 0;
       raiz.style.setProperty('--progreso', progreso.toFixed(4));
+      setProgresoScroll(progreso);
+      setMostrarHud(scrollTop > 90);
+
+      // Clasificación de la zona vertebral según el recorrido vertical
+      if (progreso < 0.22) {
+        setZonaEspina('C1-C7 · Cervical');
+      } else if (progreso < 0.55) {
+        setZonaEspina('T1-T12 · Tronco');
+      } else if (progreso < 0.82) {
+        setZonaEspina('L1-L5 · Lumbar');
+      } else {
+        setZonaEspina('S1 · Sacro');
+      }
     };
     const alDesplazar = () => {
       pendiente ||= requestAnimationFrame(actualizar);
@@ -314,9 +332,21 @@ export function LandingPage() {
 
   return (
     <div className="landing" ref={raizRef}>
+      {/* Barra superior de telemetría de scroll que acompaña todo el recorrido */}
+      <div
+        className="barra-scroll-top"
+        style={{ transform: `scaleX(${progresoScroll})` }}
+        aria-hidden="true"
+      />
+
       <div className="eje-espina" aria-hidden="true">
         <span className="eje-espina__relleno" />
-        <span className="eje-espina__nodo" />
+        <div className="eje-espina__nodo">
+          <span className="eje-espina__pulso" />
+          <span className="eje-espina__etiqueta">
+            {zonaEspina} ({Math.round(progresoScroll * 100)}%)
+          </span>
+        </div>
       </div>
 
       <header className="cabecera">
@@ -373,8 +403,8 @@ export function LandingPage() {
               </a>
             </div>
             <p className="heroe__nota">
-              <ShieldCheck size={16} aria-hidden="true" />
-              Sin tarjeta. Procesamiento local: <b>0 KB</b> de video almacenado.
+              <CreditCard size={16} aria-hidden="true" />
+              Requiere tarjeta de crédito · 14 días de prueba ($0 hoy). Procesamiento local: <b>0 KB</b> de video almacenado.
             </p>
           </div>
 
@@ -392,6 +422,10 @@ export function LandingPage() {
               viewBox="0 0 380 560"
               role="img"
               aria-label="Columna vertebral con una desviación cervical señalada y su eje ideal"
+              style={{
+                transform: `translateY(${Math.min(32, progresoScroll * 140)}px)`,
+                transition: 'transform 0.08s linear',
+              }}
             >
               <g className="radios">
                 <circle cx="190" cy="300" r="220" fill="none" stroke="#8FA0C4" strokeWidth="0.8" />
@@ -809,7 +843,7 @@ export function LandingPage() {
                   </Link>
                   {plan.pruebaGratis && (
                     <span className="plan__subnota">
-                      Sin cobro durante los 14 días · Cancela cuando quieras
+                      Requiere tarjeta · $0 hoy, primer cobro tras 14 días · Cancela cuando quieras
                     </span>
                   )}
                 </div>
@@ -913,6 +947,31 @@ export function LandingPage() {
 
         <p className="pie__legal">© 2026 visitask — ErgoCheck AI. Todos los derechos reservados.</p>
       </footer>
+
+      {/* HUD interactivo de scroll ergonómico y retorno al inicio */}
+      <button
+        type="button"
+        className={`hud-scroll ${mostrarHud ? 'hud-scroll--visible' : ''}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Volver arriba, telemetría ergonómica"
+        title="Volver al inicio"
+      >
+        <div className="hud-scroll__icono">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <circle cx="12" cy="4" r="2" fill="#C6F432" stroke="none" />
+            <line x1="12" y1="8" x2="12" y2="10" stroke="#C6F432" />
+            <line x1="12" y1="13" x2="12" y2="15" stroke="#C6F432" />
+            <line x1="12" y1="18" x2="12" y2="20" stroke="#C6F432" />
+          </svg>
+        </div>
+        <div className="hud-scroll__datos">
+          <span className="hud-scroll__zona">{zonaEspina}</span>
+          <span className="hud-scroll__porcentaje font-mono">{Math.round(progresoScroll * 100)}%</span>
+        </div>
+        <div className="hud-scroll__flecha">
+          <ArrowRight className="-rotate-90" size={13} />
+        </div>
+      </button>
     </div>
   );
 }
