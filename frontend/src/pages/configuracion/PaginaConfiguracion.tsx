@@ -18,11 +18,14 @@ import { Boton } from '../../components/comun/Boton.js';
 import { Insignia } from '../../components/comun/Insignia.js';
 import { useTituloPagina } from '../../hooks/useTituloPagina.js';
 import { ModalCambiarPlan } from './ModalCambiarPlan.js';
+import { ModalComprobanteDigital } from './ModalComprobanteDigital.js';
+import { ModalProcesarPago } from './ModalProcesarPago.js';
 import { servicioSuscripciones } from '../../services/servicioSuscripciones.js';
 import type {
   PlanCatalogo,
   SuscripcionActualItem,
   TipoPlanSuscripcion,
+  ComprobanteDigitalItem,
 } from '../../types/suscripcion.tipos.js';
 import './configuracion.css';
 
@@ -32,10 +35,17 @@ export const PaginaConfiguracion: React.FC = () => {
   const [pestañaActiva, setPestañaActiva] = useState<'suscripcion' | 'calibracion'>('suscripcion');
   const [suscripcion, setSuscripcion] = useState<SuscripcionActualItem | null>(null);
   const [planes, setPlanes] = useState<PlanCatalogo[]>([]);
+  const [facturas, setFacturas] = useState<ComprobanteDigitalItem[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [modalAbierto, setModalAbierto] = useState<boolean>(false);
   const [planParaCambiar, setPlanParaCambiar] = useState<TipoPlanSuscripcion>('SAAS_SEAT_MONTHLY');
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+
+  // Estados de CU05: Procesamiento de pago y comprobante
+  const [modalPagoAbierto, setModalPagoAbierto] = useState<boolean>(false);
+  const [modalComprobanteAbierto, setModalComprobanteAbierto] = useState<boolean>(false);
+  const [comprobanteSeleccionado, setComprobanteSeleccionado] = useState<ComprobanteDigitalItem | null>(null);
+  const [reintentando, setReintentando] = useState<string | null>(null);
 
   // Parámetros de calibración ergonómica
   const [sensibilidad, setSensibilidad] = useState<number>(70);
@@ -45,12 +55,14 @@ export const PaginaConfiguracion: React.FC = () => {
   const cargarDatosSuscripcion = async () => {
     try {
       setCargando(true);
-      const [planesData, subData] = await Promise.all([
+      const [planesData, subData, facturasData] = await Promise.all([
         servicioSuscripciones.obtenerPlanes(),
         servicioSuscripciones.obtenerActual(),
+        servicioSuscripciones.listarHistorialFacturas(),
       ]);
       setPlanes(planesData);
       setSuscripcion(subData);
+      setFacturas(facturasData);
     } catch (err) {
       console.error('Error al cargar datos de suscripción:', err);
     } finally {
@@ -73,6 +85,51 @@ export const PaginaConfiguracion: React.FC = () => {
       `¡Plan actualizado con éxito a "${suscripcionActualizada.nombrePlan}"! Fecha de entrada en vigor: Inmediata.`,
     );
     setTimeout(() => setMensajeExito(null), 5000);
+  };
+
+  const abrirComprobante = (factura: ComprobanteDigitalItem) => {
+    setComprobanteSeleccionado(factura);
+    setModalComprobanteAbierto(true);
+  };
+
+  const manejarPagoCompletado = (comprobante: ComprobanteDigitalItem) => {
+    setFacturas((prev) => [comprobante, ...prev.filter((f) => f.invoiceNumber !== comprobante.invoiceNumber)]);
+    if (suscripcion) {
+      setSuscripcion({
+        ...suscripcion,
+        estado: comprobante.estado === 'PAID' ? 'ACTIVA' : 'PAST_DUE',
+      });
+    }
+    setComprobanteSeleccionado(comprobante);
+    setModalComprobanteAbierto(true);
+    setMensajeExito(
+      comprobante.estado === 'PAID'
+        ? `Cobro exitoso por $${comprobante.total.toFixed(2)} USD. Comprobante digital ${comprobante.invoiceNumber} emitido.`
+        : `Cobro rechazado. Factura ${comprobante.invoiceNumber} en cola de reintento automático.`,
+    );
+    setTimeout(() => setMensajeExito(null), 6000);
+  };
+
+  const manejarReintentoCobro = async (invoiceNumber: string) => {
+    try {
+      setReintentando(invoiceNumber);
+      const res = await servicioSuscripciones.reintentarCobro({ invoiceNumber, forzarExito: true });
+      if (res.exito) {
+        setFacturas((prev) =>
+          prev.map((f) => (f.invoiceNumber === invoiceNumber ? res.comprobante : f)),
+        );
+        if (suscripcion) {
+          setSuscripcion({ ...suscripcion, estado: 'ACTIVA' });
+        }
+        setComprobanteSeleccionado(res.comprobante);
+        setMensajeExito(`¡Reintento exitoso! Factura ${invoiceNumber} pagada y cobertura reactivada.`);
+        setTimeout(() => setMensajeExito(null), 6000);
+      }
+    } catch (err: any) {
+      alert(`Error al reintentar el cobro: ${err?.message || 'Error de pasarela'}`);
+    } finally {
+      setReintentando(null);
+    }
   };
 
   const guardarCalibracion = () => {
@@ -184,15 +241,27 @@ export const PaginaConfiguracion: React.FC = () => {
                   <p className="text-[10px] text-slate-400">Ciclo {suscripcion?.cicloFacturacion || 'Anual'}</p>
                 </div>
 
-                <Boton
-                  tamano="sm"
-                  variante="primario"
-                  onClick={() => abrirModalCambio(suscripcion?.tipoPlan || 'SAAS_SEAT_MONTHLY')}
-                  className="text-xs gap-1.5 bg-[#C6F432] text-[#0B1020] hover:bg-[#b0db2a] font-bold"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Modificar Plan / Capacidad</span>
-                </Boton>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Boton
+                    tamano="sm"
+                    variante="borde"
+                    onClick={() => setModalPagoAbierto(true)}
+                    className="text-xs gap-1.5 bg-white/10 text-white border-white/20 hover:bg-white/20 font-semibold"
+                  >
+                    <CreditCard className="w-3.5 h-3.5 text-[#C6F432]" />
+                    <span>Pagar / Renovar Cuota</span>
+                  </Boton>
+
+                  <Boton
+                    tamano="sm"
+                    variante="primario"
+                    onClick={() => abrirModalCambio(suscripcion?.tipoPlan || 'SAAS_SEAT_MONTHLY')}
+                    className="text-xs gap-1.5 bg-[#C6F432] text-[#0B1020] hover:bg-[#b0db2a] font-bold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Modificar Plan</span>
+                  </Boton>
+                </div>
               </div>
             </div>
 
@@ -344,63 +413,90 @@ export const PaginaConfiguracion: React.FC = () => {
             </div>
           </div>
 
-          {/* Historial de Facturas y Comprobantes */}
-          <Tarjeta titulo="Historial de Facturación y Comprobantes Fiscales" subtitulo="Comprobantes con NIT institucional y desglose de IVA (13%)">
+          {/* Historial de Facturas y Comprobantes Fiscales (CU05) */}
+          <Tarjeta
+            titulo="Historial de Facturación y Comprobantes Fiscales"
+            subtitulo="Validación de cobros mediante pasarela segura, emisión de comprobantes digitales y reintentos automáticos"
+          >
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 text-left text-slate-500 uppercase font-mono text-[10px]">
                     <th className="py-2.5 px-3">Nº Factura</th>
                     <th className="py-2.5 px-3">Fecha de Emisión</th>
-                    <th className="py-2.5 px-3">Plan / Concepto</th>
+                    <th className="py-2.5 px-3">Concepto / Plan</th>
                     <th className="py-2.5 px-3">Importe</th>
                     <th className="py-2.5 px-3">Estado</th>
-                    <th className="py-2.5 px-3 text-right">Comprobante</th>
+                    <th className="py-2.5 px-3 text-right">Comprobante / Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  <tr>
-                    <td className="py-3 px-3 font-mono font-bold text-slate-900">INV-2026-004</td>
-                    <td className="py-3 px-3">01 de Octubre, 2026</td>
-                    <td className="py-3 px-3">{suscripcion?.nombrePlan || 'Enterprise Custom Total'}</td>
-                    <td className="py-3 px-3 font-mono font-bold">${suscripcion?.costoMensualEstimado.toFixed(2) || '590.00'} USD</td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        Pagada
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => alert('Descargando comprobante fiscal INV-2026-004 (PDF firmado digitalmente)...')}
-                        className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                        title="Descargar PDF"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-3 font-mono font-bold text-slate-900">INV-2026-003</td>
-                    <td className="py-3 px-3">01 de Septiembre, 2026</td>
-                    <td className="py-3 px-3">Enterprise Custom Total</td>
-                    <td className="py-3 px-3 font-mono font-bold">$590.00 USD</td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        Pagada
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => alert('Descargando comprobante fiscal INV-2026-003 (PDF firmado digitalmente)...')}
-                        className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                        title="Descargar PDF"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
+                  {facturas.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-6 text-center text-slate-400">
+                        No hay comprobantes de cobro emitidos aún.
+                      </td>
+                    </tr>
+                  ) : (
+                    facturas.map((f) => {
+                      const esPagada = f.estado === 'PAID';
+                      const esFallida = f.estado === 'FAILED';
+                      return (
+                        <tr key={f.invoiceNumber} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                            {f.invoiceNumber}
+                          </td>
+                          <td className="py-3 px-3">
+                            {new Date(f.fechaEmision).toLocaleDateString()}
+                          </td>
+                          <td className="py-3 px-3 max-w-xs truncate" title={f.concepto}>
+                            {f.concepto}
+                          </td>
+                          <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                            ${f.total.toFixed(2)} USD
+                          </td>
+                          <td className="py-3 px-3">
+                            {esPagada ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Pagada
+                              </span>
+                            ) : esFallida ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                Rechazada ({f.reintentosCobro || 1} reint.)
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                                Pendiente
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {esFallida && (
+                                <button
+                                  type="button"
+                                  onClick={() => manejarReintentoCobro(f.invoiceNumber)}
+                                  disabled={reintentando === f.invoiceNumber}
+                                  className="px-2.5 py-1 text-[11px] font-bold bg-rose-600 text-white hover:bg-rose-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                                >
+                                  <RefreshCw className={`w-3 h-3 ${reintentando === f.invoiceNumber ? 'animate-spin' : ''}`} />
+                                  <span>{reintentando === f.invoiceNumber ? 'Reintentando...' : 'Reintentar'}</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => abrirComprobante(f)}
+                                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
+                                title="Ver Comprobante Fiscal Digital Oficial"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -478,6 +574,22 @@ export const PaginaConfiguracion: React.FC = () => {
         suscripcionActual={suscripcion}
         planes={planes}
         alConfirmarExitoso={manejarPlanActualizado}
+      />
+
+      {/* Modal para Procesar Pago con Pasarela y Validación (CU05) */}
+      <ModalProcesarPago
+        abierto={modalPagoAbierto}
+        alCerrar={() => setModalPagoAbierto(false)}
+        suscripcion={suscripcion}
+        alPagoCompletado={manejarPagoCompletado}
+      />
+
+      {/* Modal de Comprobante Fiscal Digital Oficial (CU05) */}
+      <ModalComprobanteDigital
+        abierto={modalComprobanteAbierto}
+        alCerrar={() => setModalComprobanteAbierto(false)}
+        comprobante={comprobanteSeleccionado}
+        alReintentar={manejarReintentoCobro}
       />
     </div>
   );

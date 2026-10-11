@@ -67,3 +67,55 @@ export interface CambiarPlanPeticion {
   seatsAllocated?: number;
   examsAllocated?: number;
 }
+
+export interface ComprobanteDigitalItem {
+  id: string;
+  invoiceNumber: string;
+  subscriptionId: string;
+  nombreOrganizacion: string;
+  nitFiscal: string;
+  concepto: string;
+  subtotal: number;
+  impuestosIva: number;
+  total: number;
+  moneda: string;
+  estado: 'PAID' | 'FAILED' | 'PENDING' | 'REFUNDED' | string;
+  fechaEmision: string;
+  fechaPago?: string;
+  metodoPago: string;
+  codigoAutorizacion: string;
+  codigoControl: string;
+  hashFirmaDigital: string;
+  qrVerificacion: string;
+  reintentosCobro?: number;
+  proximoReintento?: string;
+  mensajeError?: string;
+}
+
+export interface PeticionPago {
+  subscriptionId: string;
+  monto: number;
+  tipoMetodoPago: 'TARJETA' | 'QR_BANCARIO' | 'TRANSFERENCIA';
+  datosTarjeta?: {
+    numeroTarjeta?: string;
+    expiracion?: string;
+    cvc?: string;
+    titular?: string;
+  };
+  nitFiscal?: string;
+  razonSocial?: string;
+  simularFallo?: boolean;
+}
+
+export interface ResultadoPago {
+  exito: boolean;
+  mensaje: string;
+  estadoSuscripcion: string;
+  comprobante: ComprobanteDigitalItem;
+}
+
+export interface PeticionReintentoCobro {
+  invoiceNumber: string;
+  forzarExito?: boolean;
+}
+

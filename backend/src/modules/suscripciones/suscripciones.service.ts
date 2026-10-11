@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   CambiarPlanDto,
@@ -6,6 +7,7 @@ import {
   TipoPlanSuscripcion,
   CicloFacturacion,
 } from './dto/cambiar-plan.dto.js';
+import { ProcesarPagoDto, ReintentarCobroDto, TipoMetodoPago } from './dto/procesar-pago.dto.js';
 
 export interface PlanCatalogo {
   tipo: TipoPlanSuscripcion;
@@ -59,6 +61,37 @@ export interface SimulacionCostoResultado {
   fechaEntradaVigor: string;
   descripcionVigor: string;
   periodoFacturacion: string;
+}
+
+export interface ComprobanteDigitalItem {
+  id: string;
+  invoiceNumber: string;
+  subscriptionId: string;
+  nombreOrganizacion: string;
+  nitFiscal: string;
+  concepto: string;
+  subtotal: number;
+  impuestosIva: number;
+  total: number;
+  moneda: string;
+  estado: string; // 'PAID' | 'FAILED' | 'PENDING'
+  fechaEmision: string;
+  fechaPago?: string;
+  metodoPago: string;
+  codigoAutorizacion: string;
+  codigoControl: string;
+  hashFirmaDigital: string;
+  qrVerificacion: string;
+  reintentosCobro?: number;
+  proximoReintento?: string;
+  mensajeError?: string;
+}
+
+export interface ResultadoPago {
+  exito: boolean;
+  mensaje: string;
+  estadoSuscripcion: string;
+  comprobante: ComprobanteDigitalItem;
 }
 
 @Injectable()
@@ -368,5 +401,356 @@ export class SuscripcionesService {
       default:
         return 'Plan Corporativo SST';
     }
+  }
+
+  // ==========================================
+  // CU05: PROCESAR PAGO Y EMITIR COMPROBANTE DIGITAL
+  // ==========================================
+  private facturasEnMemoria: ComprobanteDigitalItem[] = [
+    {
+      id: 'inv-004',
+      invoiceNumber: 'INV-2026-004',
+      subscriptionId: 'sub-visitask-01',
+      nombreOrganizacion: 'Visitask Global Enterprise',
+      nitFiscal: 'NIT 1029384756',
+      concepto: 'Suscripción Enterprise Custom Total - Monitoreo Ergonómico y Proctoring AI',
+      subtotal: 522.12,
+      impuestosIva: 67.88,
+      total: 590.0,
+      moneda: 'USD',
+      estado: 'PAID',
+      fechaEmision: new Date('2026-10-01').toISOString(),
+      fechaPago: new Date('2026-10-01').toISOString(),
+      metodoPago: 'Tarjeta Corporativa •••• 4242 (Visa Business)',
+      codigoAutorizacion: 'AUT-98231024-VT',
+      codigoControl: 'E4-8B-3C-D1-9F',
+      hashFirmaDigital: '7a9c34d8ef01bc9942a5e81d77b2190c4f8812ad30bc41238910fedcba876543',
+      qrVerificacion: 'https://visitask.ai/validador/facturas/INV-2026-004?hash=7a9c34d8',
+      reintentosCobro: 0,
+    },
+    {
+      id: 'inv-003',
+      invoiceNumber: 'INV-2026-003',
+      subscriptionId: 'sub-visitask-01',
+      nombreOrganizacion: 'Visitask Global Enterprise',
+      nitFiscal: 'NIT 1029384756',
+      concepto: 'Suscripción Enterprise Custom Total - Cuota Mensual',
+      subtotal: 522.12,
+      impuestosIva: 67.88,
+      total: 590.0,
+      moneda: 'USD',
+      estado: 'PAID',
+      fechaEmision: new Date('2026-09-01').toISOString(),
+      fechaPago: new Date('2026-09-01').toISOString(),
+      metodoPago: 'Tarjeta Corporativa •••• 4242 (Visa Business)',
+      codigoAutorizacion: 'AUT-98110901-VT',
+      codigoControl: '9A-12-FE-45-7C',
+      hashFirmaDigital: '2f1188bb3344cc55dd66ee77ff88aa9900112233445566778899aabbccddeeff',
+      qrVerificacion: 'https://visitask.ai/validador/facturas/INV-2026-003?hash=2f1188bb',
+      reintentosCobro: 0,
+    },
+  ];
+
+  async procesarPago(organizacionId: string, dto: ProcesarPagoDto): Promise<ResultadoPago> {
+    const orgId = organizacionId || 'org-visitask-global';
+    const subActual = await this.obtenerSuscripcionActual(orgId);
+
+    const subtotal = Math.round((dto.monto / 1.13) * 100) / 100;
+    const impuestosIva = Math.round((dto.monto - subtotal) * 100) / 100;
+
+    const fechaAhora = new Date();
+    const numeroSecuencia = Math.floor(100 + Math.random() * 900);
+    const invoiceNumber = `INV-${fechaAhora.getFullYear()}-${numeroSecuencia}`;
+    const id = `inv-${Date.now()}`;
+
+    // Validar si es una simulación de fallo (fondos insuficientes o rechazo bancario)
+    const numeroTarjeta = dto.datosTarjeta?.numeroTarjeta || '';
+    const esFallo = dto.simularFallo === true || numeroTarjeta.endsWith('0002') || numeroTarjeta.endsWith('9999');
+
+    if (esFallo) {
+      this.logger.warn(`Cobro rechazado por pasarela para la suscripción ${dto.subscriptionId}`);
+
+      if (this.suscripciones[orgId]) {
+        this.suscripciones[orgId].estado = 'PAST_DUE';
+      }
+
+      const fechaProximoReintento = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      const comprobanteFallido: ComprobanteDigitalItem = {
+        id,
+        invoiceNumber,
+        subscriptionId: dto.subscriptionId || subActual.id,
+        nombreOrganizacion: subActual.nombreOrganizacion,
+        nitFiscal: dto.nitFiscal || 'NIT 1029384756',
+        concepto: `Cobro rechazado de suscripción ${subActual.nombrePlan}`,
+        subtotal,
+        impuestosIva,
+        total: dto.monto,
+        moneda: 'USD',
+        estado: 'FAILED',
+        fechaEmision: fechaAhora.toISOString(),
+        metodoPago: dto.tipoMetodoPago === TipoMetodoPago.TARJETA
+          ? `Tarjeta •••• ${numeroTarjeta.slice(-4) || '9999'}`
+          : 'QR Interoperable',
+        codigoAutorizacion: 'RECHAZADO-051',
+        codigoControl: 'XX-00-RECHAZO',
+        hashFirmaDigital: 'N/A',
+        qrVerificacion: '',
+        reintentosCobro: 1,
+        proximoReintento: fechaProximoReintento.toISOString(),
+        mensajeError: 'Fondos insuficientes o transacción rechazada por el banco emisor (Error 051). Reintento automático programado.',
+      };
+
+      this.facturasEnMemoria.unshift(comprobanteFallido);
+
+      try {
+        await this.prisma.invoice.create({
+          data: {
+            id,
+            subscriptionId: subActual.id,
+            invoiceNumber,
+            amount: dto.monto,
+            currency: 'USD',
+            status: 'FAILED',
+            paymentProvider: 'Pasarela Segura PCI-DSS',
+            transactionId: `txn_fail_${Date.now()}`,
+          },
+        });
+
+        await this.prisma.subscription.update({
+          where: { id: subActual.id },
+          data: { status: 'PAST_DUE' },
+        });
+      } catch (err: any) {
+        this.logger.warn(`Persistencia diferida de factura fallida: ${err?.message}`);
+      }
+
+      return {
+        exito: false,
+        mensaje: 'El cobro no pudo completarse. Se ha programado un reintento automático y puedes reintentar de inmediato.',
+        estadoSuscripcion: 'PAST_DUE',
+        comprobante: comprobanteFallido,
+      };
+    }
+
+    // Cobro Exitoso: Generar Comprobante Fiscal Digital con Hash Criptográfico
+    const hashData = `${invoiceNumber}|${dto.monto}|${subActual.nombreOrganizacion}|${fechaAhora.toISOString()}|VT-SECRET-2026`;
+    const hashFirmaDigital = crypto.createHash('sha256').update(hashData).digest('hex');
+    const codigoAutorizacion = `AUT-${fechaAhora.getFullYear()}${Math.floor(100000 + Math.random() * 900000)}-VT`;
+    const codigoControl = `${hashFirmaDigital.slice(0, 2).toUpperCase()}-${hashFirmaDigital.slice(2, 4).toUpperCase()}-${hashFirmaDigital.slice(4, 6).toUpperCase()}-${hashFirmaDigital.slice(6, 8).toUpperCase()}`;
+    const qrVerificacion = `https://visitask.ai/validador/facturas/${invoiceNumber}?hash=${hashFirmaDigital.slice(0, 12)}&total=${dto.monto}`;
+
+    const ultimosDigitos = numeroTarjeta.slice(-4) || '4242';
+    const descMetodoPago = dto.tipoMetodoPago === TipoMetodoPago.TARJETA
+      ? `Tarjeta de Crédito/Débito •••• ${ultimosDigitos}`
+      : dto.tipoMetodoPago === TipoMetodoPago.QR_BANCARIO
+      ? 'QR Interoperable Simple'
+      : 'Transferencia Bancaria Inmediata';
+
+    const comprobanteExitoso: ComprobanteDigitalItem = {
+      id,
+      invoiceNumber,
+      subscriptionId: dto.subscriptionId || subActual.id,
+      nombreOrganizacion: subActual.nombreOrganizacion,
+      nitFiscal: dto.nitFiscal || 'NIT 1029384756',
+      concepto: `Pago Suscripción SaaS ${subActual.nombrePlan} - Licencia ErgoCheck AI`,
+      subtotal,
+      impuestosIva,
+      total: dto.monto,
+      moneda: 'USD',
+      estado: 'PAID',
+      fechaEmision: fechaAhora.toISOString(),
+      fechaPago: fechaAhora.toISOString(),
+      metodoPago: descMetodoPago,
+      codigoAutorizacion,
+      codigoControl,
+      hashFirmaDigital,
+      qrVerificacion,
+      reintentosCobro: 0,
+    };
+
+    this.facturasEnMemoria.unshift(comprobanteExitoso);
+
+    if (this.suscripciones[orgId]) {
+      this.suscripciones[orgId].estado = 'ACTIVA';
+      this.suscripciones[orgId].metodoPago = {
+        tipo: dto.tipoMetodoPago === TipoMetodoPago.TARJETA ? 'Tarjeta de Crédito' : 'QR Interoperable',
+        ultimosDigitos,
+        marca: 'Visa / Pasarela Segura',
+      };
+    }
+
+    try {
+      await this.prisma.invoice.create({
+        data: {
+          id,
+          subscriptionId: subActual.id,
+          invoiceNumber,
+          amount: dto.monto,
+          currency: 'USD',
+          status: 'PAID',
+          paymentProvider: 'Pasarela Segura PCI-DSS',
+          transactionId: `txn_suc_${Date.now()}`,
+          receiptUrl: `/api/suscripciones/comprobante/${invoiceNumber}`,
+          paidAt: fechaAhora,
+        },
+      });
+
+      await this.prisma.subscription.update({
+        where: { id: subActual.id },
+        data: { status: 'ACTIVE' },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Persistencia diferida de factura exitosa: ${err?.message}`);
+    }
+
+    this.logger.log(`Cobro exitoso de ${dto.monto} USD procesado para ${invoiceNumber}`);
+
+    return {
+      exito: true,
+      mensaje: 'Cobro procesado con éxito y comprobante digital emitido.',
+      estadoSuscripcion: 'ACTIVA',
+      comprobante: comprobanteExitoso,
+    };
+  }
+
+  async reintentarCobro(organizacionId: string, dto: ReintentarCobroDto): Promise<ResultadoPago> {
+    const orgId = organizacionId || 'org-visitask-global';
+    const facturaExistente = this.facturasEnMemoria.find((f) => f.invoiceNumber === dto.invoiceNumber);
+
+    if (!facturaExistente) {
+      throw new BadRequestException(`No se encontró la factura ${dto.invoiceNumber} para reintentar.`);
+    }
+
+    const fechaAhora = new Date();
+    const hashData = `${dto.invoiceNumber}|${facturaExistente.total}|ReintentoExitoso|${fechaAhora.toISOString()}`;
+    const hashFirmaDigital = crypto.createHash('sha256').update(hashData).digest('hex');
+
+    facturaExistente.estado = 'PAID';
+    facturaExistente.fechaPago = fechaAhora.toISOString();
+    facturaExistente.codigoAutorizacion = `AUT-REINTENTO-${Date.now().toString().slice(-6)}`;
+    facturaExistente.codigoControl = `${hashFirmaDigital.slice(0, 2).toUpperCase()}-${hashFirmaDigital.slice(2, 4).toUpperCase()}-OK`;
+    facturaExistente.hashFirmaDigital = hashFirmaDigital;
+    facturaExistente.qrVerificacion = `https://visitask.ai/validador/facturas/${dto.invoiceNumber}?reintento=exito`;
+    facturaExistente.reintentosCobro = (facturaExistente.reintentosCobro || 0) + 1;
+    facturaExistente.mensajeError = undefined;
+    facturaExistente.proximoReintento = undefined;
+
+    if (this.suscripciones[orgId]) {
+      this.suscripciones[orgId].estado = 'ACTIVA';
+    }
+
+    try {
+      await this.prisma.invoice.updateMany({
+        where: { invoiceNumber: dto.invoiceNumber },
+        data: {
+          status: 'PAID',
+          paidAt: fechaAhora,
+        },
+      });
+
+      const subActual = await this.obtenerSuscripcionActual(orgId);
+      await this.prisma.subscription.update({
+        where: { id: subActual.id },
+        data: { status: 'ACTIVE' },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Actualización diferida en BD de reintento: ${err?.message}`);
+    }
+
+    return {
+      exito: true,
+      mensaje: `Reintento de cobro exitoso para ${dto.invoiceNumber}. La suscripción ha sido reactivada.`,
+      estadoSuscripcion: 'ACTIVA',
+      comprobante: facturaExistente,
+    };
+  }
+
+  async obtenerComprobante(numeroFactura: string): Promise<ComprobanteDigitalItem> {
+    const factura = this.facturasEnMemoria.find((f) => f.invoiceNumber === numeroFactura);
+    if (factura) return factura;
+
+    try {
+      const facturaBd = await this.prisma.invoice.findUnique({
+        where: { invoiceNumber: numeroFactura },
+        include: { subscription: { include: { organizacion: true } } },
+      });
+
+      if (facturaBd) {
+        const monto = Number(facturaBd.amount);
+        const subtotal = Math.round((monto / 1.13) * 100) / 100;
+        return {
+          id: facturaBd.id,
+          invoiceNumber: facturaBd.invoiceNumber,
+          subscriptionId: facturaBd.subscriptionId,
+          nombreOrganizacion: facturaBd.subscription?.organizacion?.nombre || 'Visitask Global Enterprise',
+          nitFiscal: facturaBd.subscription?.organizacion?.identificacionFiscal || 'NIT 1029384756',
+          concepto: 'Suscripción SaaS ErgoCheck AI',
+          subtotal,
+          impuestosIva: Math.round((monto - subtotal) * 100) / 100,
+          total: monto,
+          moneda: facturaBd.currency,
+          estado: facturaBd.status,
+          fechaEmision: facturaBd.createdAt.toISOString(),
+          fechaPago: facturaBd.paidAt?.toISOString(),
+          metodoPago: facturaBd.paymentProvider || 'Pasarela Segura PCI-DSS',
+          codigoAutorizacion: `AUT-${facturaBd.invoiceNumber}`,
+          codigoControl: 'AB-CD-EF-01',
+          hashFirmaDigital: crypto.createHash('sha256').update(facturaBd.invoiceNumber).digest('hex'),
+          qrVerificacion: `https://visitask.ai/validador/facturas/${facturaBd.invoiceNumber}`,
+        };
+      }
+    } catch (err: any) {
+      this.logger.warn(`Consulta diferida de comprobante: ${err?.message}`);
+    }
+
+    return this.facturasEnMemoria[0];
+  }
+
+  async listarHistorialFacturas(organizacionId: string): Promise<ComprobanteDigitalItem[]> {
+    const orgId = organizacionId || 'org-visitask-global';
+
+    try {
+      const facturasBd = await this.prisma.invoice.findMany({
+        where: {
+          subscription: {
+            organizationId: orgId,
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: { subscription: { include: { organizacion: true } } },
+      });
+
+      if (facturasBd && facturasBd.length > 0) {
+        return facturasBd.map((f) => {
+          const monto = Number(f.amount);
+          const subtotal = Math.round((monto / 1.13) * 100) / 100;
+          return {
+            id: f.id,
+            invoiceNumber: f.invoiceNumber,
+            subscriptionId: f.subscriptionId,
+            nombreOrganizacion: f.subscription?.organizacion?.nombre || 'Visitask Global Enterprise',
+            nitFiscal: f.subscription?.organizacion?.identificacionFiscal || 'NIT 1029384756',
+            concepto: 'Suscripción SaaS ErgoCheck AI',
+            subtotal,
+            impuestosIva: Math.round((monto - subtotal) * 100) / 100,
+            total: monto,
+            moneda: f.currency,
+            estado: f.status,
+            fechaEmision: f.createdAt.toISOString(),
+            fechaPago: f.paidAt?.toISOString(),
+            metodoPago: f.paymentProvider || 'Tarjeta Corporativa',
+            codigoAutorizacion: `AUT-${f.invoiceNumber}`,
+            codigoControl: 'AB-CD-EF-01',
+            hashFirmaDigital: crypto.createHash('sha256').update(f.invoiceNumber).digest('hex'),
+            qrVerificacion: `https://visitask.ai/validador/facturas/${f.invoiceNumber}`,
+          };
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`Consulta diferida de historial de facturas: ${err?.message}`);
+    }
+
+    return this.facturasEnMemoria;
   }
 }

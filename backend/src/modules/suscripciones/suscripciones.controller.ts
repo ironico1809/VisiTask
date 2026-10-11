@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Headers, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Headers, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { SuscripcionesService } from './suscripciones.service.js';
 import { CambiarPlanDto, SimularCambioPlanDto } from './dto/cambiar-plan.dto.js';
 
@@ -44,5 +44,36 @@ export class SuscripcionesController {
   ) {
     const organizacionId = extraerOrganizacionIdDeCabecera(authHeader);
     return this.suscripcionesService.cambiarPlan(organizacionId, dto);
+  }
+
+  @Post('pagar')
+  @HttpCode(HttpStatus.OK)
+  async procesarPago(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() dto: any,
+  ) {
+    const organizacionId = extraerOrganizacionIdDeCabecera(authHeader);
+    return this.suscripcionesService.procesarPago(organizacionId, dto);
+  }
+
+  @Post('reintentar-cobro')
+  @HttpCode(HttpStatus.OK)
+  async reintentarCobro(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() dto: any,
+  ) {
+    const organizacionId = extraerOrganizacionIdDeCabecera(authHeader);
+    return this.suscripcionesService.reintentarCobro(organizacionId, dto);
+  }
+
+  @Get('comprobante/:numeroFactura')
+  async obtenerComprobante(@Param('numeroFactura') numeroFactura: string) {
+    return this.suscripcionesService.obtenerComprobante(numeroFactura);
+  }
+
+  @Get('historial-facturas')
+  async listarHistorialFacturas(@Headers('authorization') authHeader?: string) {
+    const organizacionId = extraerOrganizacionIdDeCabecera(authHeader);
+    return this.suscripcionesService.listarHistorialFacturas(organizacionId);
   }
 }
