@@ -7,7 +7,6 @@ import {
   Building2,
   Users,
   User,
-  FileCheck2,
   FileSpreadsheet,
   Settings,
   LogOut,
@@ -29,7 +28,6 @@ const elementosNavegacion: ElementoNavegacion[] = [
   { nombre: 'Monitor Ergonómico', ruta: '/ergonomics', icono: Activity, insignia: 'En vivo' },
   { nombre: 'Supervisión Exámenes', ruta: '/proctoring', icono: ShieldAlert },
   { nombre: 'Mi Perfil', ruta: '/perfil', icono: User },
-  { nombre: 'Consentimiento Digital', ruta: '/consent', icono: FileCheck2 },
   { nombre: 'Reportes y SST', ruta: '/reports', icono: FileSpreadsheet },
   { nombre: 'Configuración y Planes', ruta: '/settings', icono: Settings },
 ];

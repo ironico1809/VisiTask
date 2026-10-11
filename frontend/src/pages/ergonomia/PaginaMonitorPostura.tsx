@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
-import { ShieldCheck, RefreshCw, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Tarjeta } from '../../components/comun/Tarjeta.js';
 import { Insignia } from '../../components/comun/Insignia.js';
-import { Boton } from '../../components/comun/Boton.js';
+import { ModalConsentimiento } from './ModalConsentimiento.js';
+import { servicioConsentimiento } from '../../services/servicioConsentimiento.js';
 
 export const PaginaMonitorPostura: React.FC = () => {
-  const [enSegundoPlano, setEnSegundoPlano] = useState(false);
   const [estaCalibrando, setEstaCalibrando] = useState(false);
+  const [modalConsentimientoAbierto, setModalConsentimientoAbierto] = useState(false);
+  const [tieneConsentimiento, setTieneConsentimiento] = useState(true);
+  const enSegundoPlano = false;
+
+  // Comprobar estado del consentimiento legal al cargar
+  useEffect(() => {
+    servicioConsentimiento.obtenerEstado().then((resp) => {
+      setTieneConsentimiento(resp.tieneConsentimiento);
+      if (!resp.tieneConsentimiento) {
+        setModalConsentimientoAbierto(true);
+      }
+    }).catch(() => {});
+  }, []);
 
   const recalibrarLineaBase = () => {
     setEstaCalibrando(true);
     setTimeout(() => setEstaCalibrando(false), 3000);
   };
 
-  // Métricas en tiempo real idénticas al prototipo Image 3
+  // Métricas en tiempo real idénticas al prototipo
   const [puntajeRula] = useState(6);
   const [anguloCuello] = useState(26);
   const [anguloTronco] = useState(19);
@@ -23,7 +36,7 @@ export const PaginaMonitorPostura: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Banner Superior: Privacidad y Destrucción en RAM */}
-      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between text-xs text-emerald-900">
+      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-900">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#0B1020] text-[#C6F432] flex items-center justify-center flex-shrink-0 shadow-xs">
             <ShieldCheck className="w-5 h-5" />
@@ -36,9 +49,20 @@ export const PaginaMonitorPostura: React.FC = () => {
             </p>
           </div>
         </div>
-        <Insignia variante="exito" className="py-1 px-3">
-          Buffer RAM: 0 KB en Cola
-        </Insignia>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setModalConsentimientoAbierto(true)}
+            className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 underline cursor-pointer flex items-center gap-1"
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>Consentimiento CU03: {tieneConsentimiento ? 'Activo' : 'Pendiente'}</span>
+          </button>
+          <Insignia variante="exito" className="py-1 px-3">
+            Buffer RAM: 0 KB
+          </Insignia>
+        </div>
       </div>
 
       {/* Disposición Principal: Canvas de Video + Panel de Métricas */}
@@ -56,144 +80,109 @@ export const PaginaMonitorPostura: React.FC = () => {
 
               {/* Superposición SVG de Esqueleto MediaPipe */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
-                {/* Línea de columna y cabeza */}
                 <line x1="50" y1="20" x2="50" y2="45" stroke="#4ade80" strokeWidth="1" />
-                <line x1="50" y1="45" x2="50" y2="75" stroke="#4ade80" strokeWidth="1" />
-                {/* Barra de hombros */}
-                <line x1="32" y1="45" x2="68" y2="45" stroke="#4ade80" strokeWidth="1" />
-                {/* Cuello a hombros */}
-                <line x1="50" y1="35" x2="32" y2="45" stroke="#4ade80" strokeWidth="0.8" />
-                <line x1="50" y1="35" x2="68" y2="45" stroke="#4ade80" strokeWidth="0.8" />
-                {/* Nodos de articulaciones */}
-                <circle cx="50" cy="18" r="1.8" fill="#86efac" />
-                <circle cx="50" cy="27" r="1.5" fill="#86efac" />
-                <circle cx="50" cy="35" r="1.5" fill="#86efac" />
-                <circle cx="32" cy="45" r="1.8" fill="#86efac" />
-                <circle cx="68" cy="45" r="1.8" fill="#86efac" />
-                <circle cx="50" cy="55" r="1.5" fill="#86efac" />
-                <circle cx="50" cy="70" r="1.8" fill="#86efac" />
+                <line x1="38" y1="30" x2="62" y2="30" stroke="#4ade80" strokeWidth="1.2" />
+                <line x1="38" y1="30" x2="30" y2="48" stroke="#facc15" strokeWidth="1" />
+                <line x1="62" y1="30" x2="70" y2="48" stroke="#facc15" strokeWidth="1" />
+                <circle cx="50" cy="20" r="2.5" fill="#C6F432" stroke="#0B1020" strokeWidth="0.5" />
+                <circle cx="38" cy="30" r="2" fill="#4ade80" />
+                <circle cx="62" cy="30" r="2" fill="#4ade80" />
+                <circle cx="30" cy="48" r="2" fill="#facc15" />
+                <circle cx="70" cy="48" r="2" fill="#facc15" />
               </svg>
 
-              {/* Píldora de estado en el video */}
-              <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs flex items-center gap-2 border border-slate-700">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Detección Pose Activa en Web Worker (30 FPS)</span>
+              {/* Insignias de Telemetría sobre el video */}
+              <div className="absolute top-4 left-4 flex gap-2">
+                <Insignia variante="marca">
+                  MediaPipe Pose • 30 FPS
+                </Insignia>
+                {enSegundoPlano && (
+                  <Insignia variante="advertencia" className="bg-amber-400 text-slate-900 border-none">
+                    Modo Ahorro: 5 FPS
+                  </Insignia>
+                )}
               </div>
 
-              {enSegundoPlano && (
-                <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center text-white p-6 text-center">
-                  <Layers className="w-12 h-12 text-[#C6F432] mb-3 animate-bounce" />
-                  <h4 className="text-lg font-bold">Monitoreo Ergonómico en Segundo Plano</h4>
-                  <p className="text-xs text-slate-400 max-w-sm mt-1">
-                    La cámara continúa evaluando tu postura silenciosamente mientras trabajas. Recibirás alertas solo si tu riesgo RULA es alto.
-                  </p>
-                  <Boton
-                    variante="borde"
-                    tamano="sm"
-                    className="mt-4 bg-white/10 text-white border-white/20 hover:bg-white/20"
-                    onClick={() => setEnSegundoPlano(false)}
-                  >
-                    Restaurar Vista de Video
-                  </Boton>
+              <div className="absolute bottom-4 left-4 right-4 bg-slate-900/80 backdrop-blur-md p-3 rounded-xl border border-slate-700 flex items-center justify-between text-white">
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <span>Tronco: <b className="text-amber-400">{anguloTronco}°</b></span>
+                  <span>Cuello: <b className="text-rose-400">{anguloCuello}°</b></span>
+                  <span>Hombros: <b className="text-emerald-400">{anguloHombros}°</b></span>
                 </div>
-              )}
-            </div>
-
-            {/* Botón de Acción Prominente: Ejecutar en Segundo Plano */}
-            <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between">
-              <Boton
-                variante="borde"
-                tamano="md"
-                className="gap-2 text-xs"
-                disabled={estaCalibrando}
-                onClick={recalibrarLineaBase}
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${estaCalibrando ? 'animate-spin' : ''}`} />
-                <span>{estaCalibrando ? 'Calibrando (3s)...' : 'Recalibrar Baseline (3s)'}</span>
-              </Boton>
-
-              <Boton
-                variante="primario"
-                tamano="lg"
-                className="gap-2 px-8 text-sm font-bold shadow-md"
-                onClick={() => setEnSegundoPlano(!enSegundoPlano)}
-              >
-                <Layers className="w-4 h-4" />
-                <span>{enSegundoPlano ? 'Abrir Visor de Cámara' : 'Ejecutar en Segundo Plano'}</span>
-              </Boton>
+                <button
+                  onClick={recalibrarLineaBase}
+                  disabled={estaCalibrando}
+                  className="px-3 py-1.5 bg-[#C6F432] text-[#0B1020] rounded-lg text-xs font-bold hover:bg-[#b2dc2a] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${estaCalibrando ? 'animate-spin' : ''}`} />
+                  <span>{estaCalibrando ? 'Calibrando...' : 'Recalibrar'}</span>
+                </button>
+              </div>
             </div>
           </Tarjeta>
         </div>
 
-        {/* Derecha: Panel de Métricas */}
+        {/* Derecha: Panel de Diagnóstico RULA */}
         <div className="space-y-4">
-          {/* Tarjeta Principal RULA */}
-          <Tarjeta className="p-6">
-            <div className="flex items-center justify-between mb-4">
+          <Tarjeta titulo="Evaluación Postural RULA" subtitulo="Método Ergonómico Automatizado">
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 mb-4">
               <div>
-                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider block">
-                  Método Ergonómico
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  Nivel de Acción
                 </span>
-                <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight">RULA: {puntajeRula}</h3>
+                <span className="text-3xl font-black text-rose-600 font-['Bricolage_Grotesque']">
+                  Puntaje {puntajeRula}
+                </span>
               </div>
-              <div className="w-16 h-16 rounded-full bg-rose-600 text-white flex flex-col items-center justify-center font-bold shadow-md">
-                <span className="text-[10px] uppercase tracking-tighter">RIESGO</span>
-                <span className="text-xs uppercase">ALTO</span>
+              <Insignia variante="peligro" className="px-3 py-1 text-xs">
+                Riesgo Alto • Modificar Pronto
+              </Insignia>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Inclinación del Cuello:</span>
+                <span className="font-bold text-rose-600">{anguloCuello}° (&gt;20° penalizado)</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Flexión de Tronco:</span>
+                <span className="font-bold text-amber-600">{anguloTronco}° (Intermedio)</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Elevación de Hombros:</span>
+                <span className="font-bold text-emerald-600">{anguloHombros}° (Correcto)</span>
               </div>
             </div>
 
-            <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 p-2.5 rounded-lg font-medium mb-6">
-              ⚠️ Inflexión prolongada de cuello detectada. Nivel de intervención 3: Cambios ergonómicos necesarios pronto.
-            </p>
-
-            {/* Lista de Ángulos */}
-            <div className="space-y-3 pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 font-medium">Ángulo Cuello:</span>
-                <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                  {anguloCuello}° <span className="text-rose-600 font-normal">(Límite: 20°)</span>
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 font-medium">Ángulo Tronco:</span>
-                <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                  {anguloTronco}° <span className="text-emerald-600 font-normal">(Correcto)</span>
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 font-medium">Ángulo Hombros:</span>
-                <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                  {anguloHombros}°
-                </span>
-              </div>
-            </div>
-          </Tarjeta>
-
-          {/* Tarjeta de Carga Estática Acumulada */}
-          <Tarjeta
-            titulo="Carga Estática Acumulada"
-            subtitulo="Penalización por inmovilidad articular sostenida > 60s"
-          >
-            <div className="space-y-3">
+            {/* Temporizador estático */}
+            <div className="mt-5 p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-600">Tiempo Inmóvil:</span>
-                <span className="text-sm font-bold text-amber-600">{segundosEstaticos} seg</span>
+                <span className="text-xs font-semibold text-slate-700">Tiempo Inmóvil:</span>
+                <span className="text-sm font-bold text-amber-700 font-mono">{segundosEstaticos} seg</span>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                 <div
                   className="bg-amber-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, (segundosEstaticos / 60) * 100)}%` }}
                 />
               </div>
-              <p className="text-[11px] text-slate-500">
-                Al superar los 60 segundos estáticos, el puntaje RULA suma +1 de penalización automática por sobrecarga muscular estática.
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Al superar 60s continuos en postura estática, el algoritmo aplica +1 de penalización automática por carga muscular estática.
               </p>
             </div>
           </Tarjeta>
         </div>
       </div>
+
+      {/* Modal Integrado de Consentimiento y Calibración (CU03) */}
+      <ModalConsentimiento
+        abierto={modalConsentimientoAbierto}
+        alCerrar={() => setModalConsentimientoAbierto(false)}
+        alAceptarConsentimiento={() => {
+          setModalConsentimientoAbierto(false);
+          setTieneConsentimiento(true);
+        }}
+      />
     </div>
   );
 };

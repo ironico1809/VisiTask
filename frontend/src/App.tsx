@@ -9,7 +9,6 @@ import { PaginaInicioSesion } from './pages/autenticacion/PaginaInicioSesion.js'
 import { PaginaPanelPrincipal } from './pages/panel/PaginaPanelPrincipal.js';
 import { PaginaMonitorPostura } from './pages/ergonomia/PaginaMonitorPostura.js';
 import { PaginaSupervisionExamen } from './pages/supervision/PaginaSupervisionExamen.js';
-import { PaginaConsentimiento } from './pages/autenticacion/PaginaConsentimiento.js';
 import { PaginaReportes } from './pages/reportes/PaginaReportes.js';
 import { PaginaConfiguracion } from './pages/configuracion/PaginaConfiguracion.js';
 import { PaginaPerfil } from './pages/perfil/PaginaPerfil.js';
@@ -42,12 +41,14 @@ export function App() {
               <Route path="/ergonomia" element={<PaginaMonitorPostura />} />
               <Route path="/proctoring" element={<PaginaSupervisionExamen />} />
               <Route path="/supervision" element={<PaginaSupervisionExamen />} />
-              <Route path="/consent" element={<PaginaConsentimiento />} />
-              <Route path="/consentimiento" element={<PaginaConsentimiento />} />
               <Route path="/reports" element={<PaginaReportes />} />
               <Route path="/reportes" element={<PaginaReportes />} />
               <Route path="/settings" element={<PaginaConfiguracion />} />
               <Route path="/configuracion" element={<PaginaConfiguracion />} />
+
+              {/* Redirección de compatibilidad para consent */}
+              <Route path="/consent" element={<Navigate to="/ergonomia" replace />} />
+              <Route path="/consentimiento" element={<Navigate to="/ergonomia" replace />} />
             </Route>
           </Route>
 
