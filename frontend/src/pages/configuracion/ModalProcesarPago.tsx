@@ -90,7 +90,7 @@ export const ModalProcesarPago: React.FC<PropiedadesModalProcesarPago> = ({
                 Pasarela de Pago Segura
               </h3>
               <p className="text-xs text-slate-500">
-                CU05: Procesamiento de cobro, validación y emisión de comprobante digital
+                Procesamiento de cobro, validación y emisión de comprobante digital
               </p>
             </div>
           </div>
@@ -240,7 +240,7 @@ export const ModalProcesarPago: React.FC<PropiedadesModalProcesarPago> = ({
             />
           </div>
 
-          {/* Opciones de Prueba de CU05: Simular Fallo de Cobro */}
+          {/* Simulación y Diagnóstico de Pasarela de Pagos */}
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="font-bold text-amber-900">Simulación de Validación Pasarela:</span>

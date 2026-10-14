@@ -101,7 +101,7 @@ export const PaginaConsentimiento: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                Norma SST • Requisito Legal CU03
+                Norma SST • Requisito Legal Obligatorio
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight font-['Bricolage_Grotesque']">

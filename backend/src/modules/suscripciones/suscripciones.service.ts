@@ -404,7 +404,7 @@ export class SuscripcionesService {
   }
 
   // ==========================================
-  // CU05: PROCESAR PAGO Y EMITIR COMPROBANTE DIGITAL
+  // PROCESAR PAGO Y EMITIR COMPROBANTE DIGITAL
   // ==========================================
   private facturasEnMemoria: ComprobanteDigitalItem[] = [
     {

@@ -20,7 +20,6 @@
   color: var(--tinta);
   min-height: 100vh;
   position: relative;
-  overflow-x: clip;
   font-family: Geist, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
@@ -483,10 +482,13 @@
 /* ── Héroe ────────────────────────────────────────────────────────────────── */
 .heroe {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   align-items: center;
-  gap: clamp(28px, 5vw, 76px);
-  padding: clamp(48px, 7vw, 104px) var(--gutter) clamp(60px, 9vw, 128px);
+  gap: clamp(24px, 4vw, 56px);
+  padding: clamp(28px, 4vh, 52px) var(--gutter);
+  min-height: calc(100vh - 72px);
+  box-sizing: border-box;
+  background: #ffffff;
 }
 
 .heroe__texto {
@@ -526,12 +528,12 @@
 }
 
 .heroe__titulo {
-  margin: 22px 0 20px;
+  margin: 14px 0 16px;
   font-family: 'Bricolage Grotesque', sans-serif;
-  font-size: clamp(38px, 5.3vw, 68px);
+  font-size: clamp(30px, 4vw, 54px);
   font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.032em;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
   font-variation-settings: 'opsz' 60, 'wght' 800;
 }
 
@@ -552,17 +554,17 @@
 }
 
 .heroe__entrada {
-  max-width: 58ch;
-  margin: 0 0 30px;
+  max-width: 52ch;
+  margin: 0 0 22px;
   color: var(--pizarra);
-  font-size: clamp(15px, 1.4vw, 18px);
-  line-height: 1.65;
+  font-size: clamp(14.5px, 1.2vw, 17px);
+  line-height: 1.6;
 }
 
 .heroe__acciones {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
 }
 
 .heroe__nota {
@@ -923,112 +925,51 @@
   color: #5ee0a0;
 }
 
-/* ── Efecto 3D de Paso de Página al hacer Scroll (Transición de Hojas) ───── */
-.contenedor-hojas {
-  perspective: 1600px;
-  perspective-origin: 50% 50%;
-  transform-style: preserve-3d;
-}
-
-.hoja-pagina {
+/* ── Sticky Card Stacking on Scroll (Transición Suave entre Secciones) ───── */
+.contenedor-stack-tarjetas {
   position: relative;
-  transform-origin: var(--origen-pliegue, top center);
-  transform: perspective(1600px)
-             rotateX(var(--rotacion-x, 0deg))
-             translateY(var(--desplazamiento-y, 0px))
-             scale(var(--escala-hoja, 1));
-  transition: transform 0.06s linear, box-shadow 0.2s ease;
-  will-change: transform;
-  border-radius: 20px;
+  display: block;
+  width: 100%;
 }
 
-/* Sombra gradual y pliegue de hoja física de libro/catálogo */
-.hoja-pagina__sombra-pliegue {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: linear-gradient(
-    180deg,
-    rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.95)) 0%,
-    rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.45)) 12%,
-    transparent 28%,
-    transparent 72%,
-    rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.55)) 100%
-  );
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4),
-              0 -12px 28px -6px rgba(11, 16, 32, calc(var(--opacidad-sombra, 0) * 0.65));
-  z-index: 25;
-  transition: opacity 0.08s linear;
+.bloque-stack-tres {
+  position: relative;
+  width: 100%;
 }
 
-/* Doblez táctil en esquina ("Dog-ear" / Doblez de página interactivo) */
-.hoja-pagina__doblez {
-  position: absolute;
-  top: 14px;
-  right: clamp(14px, 3.5vw, 42px);
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 13px;
-  background: rgba(11, 16, 32, 0.04);
-  border: 1px solid rgba(11, 16, 32, 0.1);
-  border-radius: 8px;
-  font-family: 'Geist Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--pizarra);
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  z-index: 30;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 0.2s ease,
-              border-color 0.2s ease,
-              color 0.2s ease,
-              box-shadow 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+.tarjeta-stack {
+  position: -webkit-sticky;
+  position: sticky;
+  top: min(72px, calc(100vh - 100%));
+  background-color: rgba(255, 255, 255, 0.90);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 -16px 44px -8px rgba(11, 16, 32, 0.05),
+              0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  transform-origin: top center;
+  transform: scale(var(--escala-tarjeta, 1)) translateY(var(--desplazamiento-y, 0px));
+  opacity: var(--opacidad-tarjeta, 1);
+  filter: brightness(var(--brillo-tarjeta, 1)) blur(var(--desenfoque-tarjeta, 0px));
+  transition: transform 0.08s linear, opacity 0.08s linear, filter 0.08s linear, box-shadow 0.2s ease;
+  will-change: transform, opacity, filter;
+  overflow: visible;
 }
 
-.hoja-pagina__doblez:hover {
-  transform: translateY(-2px) scale(1.05);
-  background: #ffffff;
-  border-color: var(--lima);
-  color: var(--tinta);
-  box-shadow: 0 6px 14px -4px rgba(198, 244, 50, 0.4), 0 0 0 1px var(--lima);
-}
-
-.hoja-pagina__doblez-icono {
-  width: 7px;
-  height: 7px;
-  border-right: 2px solid var(--lima);
-  border-bottom: 2px solid var(--lima);
-  transform: rotate(45deg);
-  transition: transform 0.2s ease;
-}
-
-.hoja-pagina__doblez:hover .hoja-pagina__doblez-icono {
-  transform: rotate(45deg) translate(1px, 1px);
-}
-
-/* Doblez en secciones oscuras (privacidad y cierre) */
-.seccion--privacidad.hoja-pagina .hoja-pagina__doblez,
-.seccion--cierre.hoja-pagina .hoja-pagina__doblez {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #c7d0dc;
-}
-
-.seccion--privacidad.hoja-pagina .hoja-pagina__doblez:hover,
-.seccion--cierre.hoja-pagina .hoja-pagina__doblez:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: var(--lima);
-  color: #ffffff;
-  box-shadow: 0 6px 16px -4px rgba(198, 244, 50, 0.45);
-}
+/* Cascada fija de z-index para el bloque de máximo 3 tarjetas apilables */
+.tarjeta-stack[data-tarjeta="1"] { z-index: 10; }
+.tarjeta-stack[data-tarjeta="2"] { z-index: 11; }
+.tarjeta-stack[data-tarjeta="3"] { z-index: 12; }
 
 /* ── Secciones genéricas ──────────────────────────────────────────────────── */
 .seccion {
-  padding: clamp(64px, 9vw, 132px) var(--gutter);
+  padding: clamp(36px, 5vh, 72px) var(--gutter);
+  min-height: calc(100vh - 72px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .seccion__encabezado {
@@ -1077,7 +1018,7 @@
 
 /* ── Beneficios ───────────────────────────────────────────────────────────── */
 .seccion--beneficios {
-  background: linear-gradient(180deg, var(--cal), var(--hueso));
+  background: linear-gradient(180deg, rgba(232, 236, 239, 0.75), rgba(246, 248, 249, 0.75));
 }
 
 .publico {
@@ -1247,6 +1188,10 @@
   transform-origin: bottom;
   transition: transform 0.7s var(--curva), background-color 0.3s var(--curva);
   transition-delay: var(--bi, 0ms);
+}
+
+.seccion--jornada {
+  background: var(--hueso);
 }
 
 .jornada.esta-visible .barra-ritmo__relleno {
@@ -1438,7 +1383,7 @@
 
 /* ── Testimonios ──────────────────────────────────────────────────────────── */
 .seccion--testimonios {
-  background: linear-gradient(180deg, var(--hueso), var(--cal));
+  background: linear-gradient(180deg, rgba(246, 248, 249, 0.75), rgba(232, 236, 239, 0.75));
 }
 
 .testimonios {
@@ -1543,7 +1488,8 @@
 
 /* ── Privacidad ───────────────────────────────────────────────────────────── */
 .seccion--privacidad {
-  background: var(--tinta);
+  background: var(--tinta, #0B1020);
+  color: #ffffff;
 }
 
 .privacidad {
@@ -1808,7 +1754,7 @@
 
 /* ── Planes ───────────────────────────────────────────────────────────────── */
 .seccion--planes {
-  background: linear-gradient(180deg, var(--cal), var(--hueso));
+  background: linear-gradient(180deg, rgba(232, 236, 239, 0.75), rgba(246, 248, 249, 0.75));
 }
 
 .planes {
@@ -2073,7 +2019,8 @@
 
 /* ── Cierre y pie ─────────────────────────────────────────────────────────── */
 .seccion--cierre {
-  background: linear-gradient(#0000, #c6f43229);
+  background: var(--tinta, #0B1020);
+  color: #ffffff;
 }
 
 .cierre {
@@ -2427,6 +2374,12 @@
 }
 
 @media (width <= 880px) {
+  .tarjeta-stack {
+    border-radius: 22px;
+  }
+  .tarjeta-stack__cabecera {
+    padding: 8px 16px;
+  }
   .eje-espina,
   .navegacion,
   .cabecera__acciones {
@@ -2471,6 +2424,10 @@
 }
 
 @media (width <= 620px) {
+  .tarjeta-stack {
+    top: calc(64px + var(--stack-offset, 0px));
+    border-radius: 20px 20px 0 0;
+  }
   .banner-stroke__svg text {
     font-size: 60px;
   }
@@ -2540,11 +2497,5 @@
   }
   .instrumento__aguja {
     stroke-dashoffset: var(--desplazamiento-final) !important;
-  }
-  .hoja-pagina {
-    transform: none !important;
-  }
-  .hoja-pagina__sombra-pliegue {
-    display: none !important;
   }
 }

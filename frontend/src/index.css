@@ -8,6 +8,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -17,8 +18,6 @@ body {
   color: #0B1020;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 /* Soporte dinámico para desplazamiento en páginas extensas */
@@ -27,8 +26,7 @@ html.desplazamiento-suave {
 }
 
 body.pagina-desplazable {
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow-x: clip;
 }
 
 /* ======================================================== */

@@ -42,3 +42,8 @@ Thumbs.db
 
 # Temporales de Prisma
 /backend/src/generated/prisma
+
+# Agentes y Habilidades de IA
+.agents/
+**/.agents/
+skills/

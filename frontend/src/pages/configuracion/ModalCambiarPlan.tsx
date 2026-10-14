@@ -134,7 +134,7 @@ export const ModalCambiarPlan: React.FC<PropiedadesModalCambiarPlan> = ({
                 Contratar o Cambiar Plan SaaS
               </h3>
               <p className="text-xs text-slate-500">
-                CU04: Previsualiza el costo unitario, impuestos y fecha de entrada en vigor
+                Previsualiza el costo unitario, impuestos y fecha de entrada en vigor
               </p>
             </div>
           </div>

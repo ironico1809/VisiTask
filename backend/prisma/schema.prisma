@@ -201,7 +201,6 @@ model ErgonomicSession {
   calibrations    CalibrationBaseline[]
   postureLogs     PostureLog[]
   alerts          Alert[]
-  syntheticIndices SyntheticIndex[]
 
   @@map("ergonomic_sessions")
 }
@@ -303,11 +302,9 @@ model SupervisionSession {
   usuario         Usuario            @relation(fields: [userId], references: [id], onDelete: Cascade)
   assessment      Assessment?        @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
   gazeEvents      GazeEvent[]
-  faceAuditEvents FaceAuditEvent[]
   telemetryEvents TelemetryEvent[]
   interviewReactions InterviewReaction[]
   incidents       Incident[]
-  syntheticIndices SyntheticIndex[]
   reports         Report[]
 
   @@map("supervision_sessions")
@@ -348,25 +345,6 @@ model GazeEvent {
 
   @@index([supervisionSessionId, timestamp])
   @@map("gaze_events")
-}
-
-enum FaceAuditType {
-  FACE_ABSENT
-  MULTIPLE_FACES
-}
-
-model FaceAuditEvent {
-  id                      String             @id @default(uuid())
-  supervisionSessionId    String             @map("supervision_session_id")
-  type                    FaceAuditType
-  detectedCount           Int                @default(0) @map("detected_count")
-  durationSeconds         Float              @default(0.0) @map("duration_seconds")
-  timestamp               DateTime           @default(now())
-
-  session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
-
-  @@index([supervisionSessionId, timestamp])
-  @@map("face_audit_events")
 }
 
 enum TelemetryType {
@@ -458,26 +436,6 @@ model Incident {
   session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
 
   @@map("incidents")
-}
-
-enum IndexType {
-  INTEGRITY_INDEX
-  ERGONOMIC_WELLBEING_INDEX
-}
-
-model SyntheticIndex {
-  id                      String             @id @default(uuid())
-  supervisionSessionId    String?            @map("supervision_session_id")
-  ergonomicSessionId      String?            @map("ergonomic_session_id")
-  type                    IndexType
-  score                   Float              // 0 a 100
-  penaltiesBreakdown      Json?              @map("penalties_breakdown")
-  calculatedAt            DateTime           @default(now()) @map("calculated_at")
-
-  supervisionSession      SupervisionSession? @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
-  ergonomicSession        ErgonomicSession?   @relation(fields: [ergonomicSessionId], references: [id], onDelete: Cascade)
-
-  @@map("synthetic_indices")
 }
 
 enum ReportType {

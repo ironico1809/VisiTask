@@ -9,6 +9,7 @@ import {
   User,
   FileSpreadsheet,
   Settings,
+  ShieldCheck,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.js';
@@ -29,6 +30,7 @@ const elementosNavegacion: ElementoNavegacion[] = [
   { nombre: 'Supervisión Exámenes', ruta: '/proctoring', icono: ShieldAlert },
   { nombre: 'Mi Perfil', ruta: '/perfil', icono: User },
   { nombre: 'Reportes y SST', ruta: '/reports', icono: FileSpreadsheet },
+  { nombre: 'Bitácora y Seguridad', ruta: '/auditoria', icono: ShieldCheck, insignia: 'Seguridad' },
   { nombre: 'Configuración y Planes', ruta: '/settings', icono: Settings },
 ];
 

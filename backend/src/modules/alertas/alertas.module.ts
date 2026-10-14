@@ -1,0 +1,13 @@
+import { Module } from '@nestjs/common';
+import { AlertasController } from './alertas.controller.js';
+import { AlertasService } from './alertas.service.js';
+import { PrismaModule } from '../../prisma/prisma.module.js';
+import { AuditoriaModule } from '../auditoria/auditoria.module.js';
+
+@Module({
+  imports: [PrismaModule, AuditoriaModule],
+  controllers: [AlertasController],
+  providers: [AlertasService],
+  exports: [AlertasService],
+})
+export class AlertasModule {}

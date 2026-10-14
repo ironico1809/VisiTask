@@ -16,6 +16,7 @@ import { PaginaConfiguracion } from './pages/configuracion/PaginaConfiguracion.j
 import { PaginaPerfil } from './pages/perfil/PaginaPerfil.js';
 import { PaginaOrganizaciones } from './pages/organizaciones/PaginaOrganizaciones.js';
 import { PaginaUsuarios } from './pages/usuarios/PaginaUsuarios.js';
+import { PaginaBitacoraAuditoria } from './pages/auditoria/PaginaBitacoraAuditoria.js';
 
 export function App() {
   return (
@@ -56,6 +57,9 @@ export function App() {
               <Route path="/suscripcion" element={<PaginaConfiguracion />} />
               <Route path="/billing" element={<PaginaConfiguracion />} />
               <Route path="/planes" element={<PaginaConfiguracion />} />
+              <Route path="/auditoria" element={<PaginaBitacoraAuditoria />} />
+              <Route path="/audit-logs" element={<PaginaBitacoraAuditoria />} />
+              <Route path="/bitacora" element={<PaginaBitacoraAuditoria />} />
 
               {/* Redirección de compatibilidad para consent */}
               <Route path="/consent" element={<Navigate to="/ergonomia" replace />} />

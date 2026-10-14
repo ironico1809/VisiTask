@@ -152,10 +152,10 @@ async function sembrarBaseDeDatos() {
         id: `rel-${u.id}`,
         usuarioId: usuarioCreado.id,
         organizacionId: u.orgId,
-        rol: u.rol as any,
+        rol: u.rol,
       },
       update: {
-        rol: u.rol as any,
+        rol: u.rol,
       },
     });
   }
@@ -200,8 +200,8 @@ async function sembrarBaseDeDatos() {
   for (const s of suscripciones) {
     await prisma.subscription.upsert({
       where: { id: s.id },
-      create: s as any,
-      update: s as any,
+      create: s,
+      update: s,
     });
   }
 
@@ -248,8 +248,8 @@ async function sembrarBaseDeDatos() {
   for (const f of facturas) {
     await prisma.invoice.upsert({
       where: { invoiceNumber: f.invoiceNumber },
-      create: f as any,
-      update: f as any,
+      create: f,
+      update: f,
     });
   }
 
