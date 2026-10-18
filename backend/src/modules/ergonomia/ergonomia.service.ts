@@ -43,7 +43,6 @@ export class ErgonomiaService {
           include: {
             membresias: {
               include: {
-                departamento: true,
                 organizacion: true,
               },
             },
@@ -83,7 +82,7 @@ export class ErgonomiaService {
         return {
           id: u.id,
           nombre: `${u.nombre} ${u.apellido}`,
-          departamento: mem?.departamento?.nombre || mem?.organizacion?.nombre || 'Operaciones',
+          departamento: mem?.organizacion?.nombre || 'Operaciones',
           edad: edadesFijas[u.id] || 25 + (idx % 12),
           puntajePostural: nivelRiesgo,
           fotoUrl:

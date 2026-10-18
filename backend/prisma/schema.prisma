@@ -57,7 +57,6 @@ model Organizacion {
   actualizadoEn         DateTime              @updatedAt @map("actualizado_en")
 
   // Relaciones
-  departamentos   Departamento[]
   membresias      UsuarioOrganizacion[]
   suscripciones   Subscription[]
   evaluaciones    Assessment[]
@@ -65,31 +64,15 @@ model Organizacion {
   @@map("organizaciones")
 }
 
-model Departamento {
-  id              String                @id @default(uuid())
-  organizacionId  String                @map("organizacion_id")
-  nombre          String                @map("nombre")
-  descripcion     String?               @map("descripcion")
-  creadoEn        DateTime              @default(now()) @map("creado_en")
-  actualizadoEn   DateTime              @updatedAt @map("actualizado_en")
-
-  organizacion    Organizacion          @relation(fields: [organizacionId], references: [id], onDelete: Cascade)
-  membresias      UsuarioOrganizacion[]
-
-  @@map("departamentos")
-}
-
 model UsuarioOrganizacion {
   id              String                @id @default(uuid())
   usuarioId       String                @map("usuario_id")
   organizacionId  String                @map("organizacion_id")
-  departamentoId  String?               @map("departamento_id")
   rol             Rol                   @default(EMPLEADO)
   fechaIngreso    DateTime              @default(now()) @map("fecha_ingreso")
 
   usuario         Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   organizacion    Organizacion          @relation(fields: [organizacionId], references: [id], onDelete: Cascade)
-  departamento    Departamento?         @relation(fields: [departamentoId], references: [id], onDelete: SetNull)
 
   @@unique([usuarioId, organizacionId])
   @@map("usuarios_organizaciones")

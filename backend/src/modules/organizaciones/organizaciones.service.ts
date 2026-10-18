@@ -66,7 +66,6 @@ export class OrganizacionesService {
       const orgsBd = await this.prisma.organizacion.findMany({
         include: {
           membresias: true,
-          departamentos: true,
         },
       });
 

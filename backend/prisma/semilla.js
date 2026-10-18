@@ -253,6 +253,180 @@ async function sembrarBaseDeDatos() {
     });
   }
 
+  // 5. Consentimientos Informados Digitales
+  const consentimientos = [
+    {
+      id: 'cons-manuela-01',
+      userId: 'usr-manuela-root',
+      type: 'TERMS_AND_PRIVACY',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '190.181.45.12',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0',
+      acceptedAt: new Date('2026-01-15T08:30:00Z'),
+    },
+    {
+      id: 'cons-manuela-02',
+      userId: 'usr-manuela-root',
+      type: 'CAMERA_AND_BIOMETRICS',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '190.181.45.12',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0',
+      acceptedAt: new Date('2026-01-15T08:31:00Z'),
+    },
+    {
+      id: 'cons-manuela-03',
+      userId: 'usr-manuela-root',
+      type: 'TELEMETRY_AND_ACTIVITY',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '190.181.45.12',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0',
+      acceptedAt: new Date('2026-01-15T08:31:00Z'),
+    },
+    {
+      id: 'cons-carlos-01',
+      userId: 'usr-carlos-01',
+      type: 'TERMS_AND_PRIVACY',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '181.115.129.80',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/127.0',
+      acceptedAt: new Date('2026-02-01T09:15:00Z'),
+    },
+    {
+      id: 'cons-carlos-02',
+      userId: 'usr-carlos-01',
+      type: 'CAMERA_AND_BIOMETRICS',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '181.115.129.80',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/127.0',
+      acceptedAt: new Date('2026-02-01T09:16:00Z'),
+    },
+    {
+      id: 'cons-juan-01',
+      userId: 'usr-juan-04',
+      type: 'CAMERA_AND_BIOMETRICS',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '200.87.144.55',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/129.0',
+      acceptedAt: new Date('2026-03-10T14:00:00Z'),
+    },
+    {
+      id: 'cons-juan-02',
+      userId: 'usr-juan-04',
+      type: 'TELEMETRY_AND_ACTIVITY',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '200.87.144.55',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/129.0',
+      acceptedAt: new Date('2026-03-10T14:01:00Z'),
+    },
+    {
+      id: 'cons-postulante-01',
+      userId: 'usr-postulante-05',
+      type: 'TERMS_AND_PRIVACY',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '186.2.140.22',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/128.0',
+      acceptedAt: new Date('2026-10-10T16:00:00Z'),
+    },
+    {
+      id: 'cons-postulante-02',
+      userId: 'usr-postulante-05',
+      type: 'CAMERA_AND_BIOMETRICS',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '186.2.140.22',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/128.0',
+      acceptedAt: new Date('2026-10-10T16:01:00Z'),
+    },
+    {
+      id: 'cons-postulante-03',
+      userId: 'usr-postulante-05',
+      type: 'TELEMETRY_AND_ACTIVITY',
+      version: '1.0',
+      isAccepted: true,
+      ipAddress: '186.2.140.22',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/128.0',
+      acceptedAt: new Date('2026-10-10T16:01:30Z'),
+    },
+  ];
+
+  for (const c of consentimientos) {
+    await prisma.legalConsent.upsert({
+      where: { id: c.id },
+      create: c,
+      update: c,
+    });
+  }
+
+  // 6. Alertas Ergonómicas y SST
+  const alertas = [
+    {
+      id: 'alt-ergo-01',
+      userId: 'usr-juan-04',
+      type: 'POSTURAL_RISK_PROLONGED',
+      level: 'HIGH',
+      message: 'Inclinación cervical excesiva (cuello > 28°) sostenida por más de 60 segundos.',
+      isSentToMobile: true,
+      isDismissed: false,
+      createdAt: new Date(Date.now() - 40 * 60 * 1000),
+    },
+    {
+      id: 'alt-ergo-02',
+      userId: 'usr-juan-04',
+      type: 'STATIC_OVERLOAD',
+      level: 'MEDIUM',
+      message: 'Sobrecarga estática detectada en trapecios: sin variación postural en 15 minutos.',
+      isSentToMobile: false,
+      isDismissed: true,
+      createdAt: new Date(Date.now() - 75 * 60 * 1000),
+    },
+    {
+      id: 'alt-ergo-03',
+      userId: 'usr-juan-04',
+      type: 'EYE_BREAK_20_20_20',
+      level: 'LOW',
+      message: 'Pausa preventiva 20-20-20 recomendada: descanse la vista enfocando a 6 metros.',
+      isSentToMobile: true,
+      isDismissed: false,
+      createdAt: new Date(Date.now() - 20 * 60 * 1000),
+    },
+    {
+      id: 'alt-ergo-04',
+      userId: 'usr-carlos-01',
+      type: 'FATIGUE_ACCUMULATED',
+      level: 'CRITICAL',
+      message: 'Índice de fatiga muscular acumulada superior al 80%. Se aconseja pausa activa inmediata.',
+      isSentToMobile: true,
+      isDismissed: false,
+      createdAt: new Date(Date.now() - 10 * 60 * 1000),
+    },
+    {
+      id: 'alt-ergo-05',
+      userId: 'usr-manuela-root',
+      type: 'ANOMALY_BEHAVIOR',
+      level: 'MEDIUM',
+      message: 'Asimetría severa de hombros detectada durante la sesión de trabajo.',
+      isSentToMobile: false,
+      isDismissed: true,
+      createdAt: new Date(Date.now() - 120 * 60 * 1000),
+    },
+  ];
+
+  for (const a of alertas) {
+    await prisma.alert.upsert({
+      where: { id: a.id },
+      create: a,
+      update: a,
+    });
+  }
+
   console.log('--- ¡Semilla completada exitosamente en PostgreSQL Supabase! ---');
 }
 

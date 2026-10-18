@@ -189,7 +189,6 @@ export class UsuariosService {
           membresias: {
             include: {
               organizacion: true,
-              departamento: true,
             },
           },
         },
@@ -207,7 +206,7 @@ export class UsuariosService {
             rol: m?.rol || 'EMPLEADO',
             organizacionId: m?.organizacionId,
             nombreOrganizacion: m?.organizacion?.nombre,
-            departamento: m?.departamento?.nombre || 'General',
+            departamento: 'Operaciones',
             activo: u.activo,
             creadoEn: u.creadoEn,
             ultimoAcceso: 'Registrado',

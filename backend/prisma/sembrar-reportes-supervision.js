@@ -85,6 +85,65 @@ async function sembrarReportesYSupervision() {
     });
   }
 
+  // 4.1 Telemetría de Mirada Ocular (Gaze Events)
+  const conteoMirada = await prisma.gazeEvent.count({
+    where: { supervisionSessionId: sesionSupervision.id },
+  });
+  if (conteoMirada === 0) {
+    await prisma.gazeEvent.createMany({
+      data: [
+        {
+          id: 'gaze-01',
+          supervisionSessionId: sesionSupervision.id,
+          pitch: -2.4,
+          yaw: 1.1,
+          roll: 0.2,
+          irisOffsetX: 0.02,
+          irisOffsetY: -0.01,
+          isSuspectedLapPhone: false,
+          durationSeconds: 12.5,
+          timestamp: new Date(Date.now() - 20 * 60 * 1000),
+        },
+        {
+          id: 'gaze-02',
+          supervisionSessionId: sesionSupervision.id,
+          pitch: -28.4,
+          yaw: 12.1,
+          roll: -3.5,
+          irisOffsetX: 0.15,
+          irisOffsetY: -0.38,
+          isSuspectedLapPhone: true,
+          durationSeconds: 4.8,
+          timestamp: new Date(Date.now() - 10 * 60 * 1000),
+        },
+        {
+          id: 'gaze-03',
+          supervisionSessionId: sesionSupervision.id,
+          pitch: 3.2,
+          yaw: -15.8,
+          roll: 1.1,
+          irisOffsetX: -0.22,
+          irisOffsetY: 0.05,
+          isSuspectedLapPhone: false,
+          durationSeconds: 2.1,
+          timestamp: new Date(Date.now() - 5 * 60 * 1000),
+        },
+        {
+          id: 'gaze-04',
+          supervisionSessionId: sesionSupervision.id,
+          pitch: -1.2,
+          yaw: 0.5,
+          roll: 0.0,
+          irisOffsetX: 0.01,
+          irisOffsetY: 0.01,
+          isSuspectedLapPhone: false,
+          durationSeconds: 18.0,
+          timestamp: new Date(Date.now() - 1 * 60 * 1000),
+        },
+      ],
+    });
+  }
+
   // 5. Incidentes de Supervisión
   const conteoIncidentes = await prisma.incident.count({
     where: { supervisionSessionId: sesionSupervision.id },
