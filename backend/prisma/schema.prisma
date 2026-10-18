@@ -102,7 +102,7 @@ model LegalConsent {
 
   usuario         Usuario            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("legal_consents")
+  @@map("consentimientos_legales")
 }
 
 // ==========================================
@@ -139,7 +139,7 @@ model Subscription {
   organizacion    Organizacion       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   invoices        Invoice[]
 
-  @@map("subscriptions")
+  @@map("suscripciones")
 }
 
 enum InvoiceStatus {
@@ -164,7 +164,7 @@ model Invoice {
 
   subscription    Subscription       @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
-  @@map("invoices")
+  @@map("facturas")
 }
 
 // ==========================================
@@ -185,7 +185,7 @@ model ErgonomicSession {
   postureLogs     PostureLog[]
   alerts          Alert[]
 
-  @@map("ergonomic_sessions")
+  @@map("sesiones_ergonomicas")
 }
 
 model CalibrationBaseline {
@@ -199,7 +199,7 @@ model CalibrationBaseline {
 
   session             ErgonomicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  @@map("calibration_baselines")
+  @@map("calibraciones")
 }
 
 model PostureLog {
@@ -216,7 +216,7 @@ model PostureLog {
   session             ErgonomicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, timestamp])
-  @@map("posture_logs")
+  @@map("registros_postura")
 }
 
 // ==========================================
@@ -252,7 +252,7 @@ model Alert {
   usuario         Usuario            @relation(fields: [userId], references: [id], onDelete: Cascade)
   session         ErgonomicSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
-  @@map("alerts")
+  @@map("alertas")
 }
 
 // ==========================================
@@ -290,7 +290,7 @@ model SupervisionSession {
   incidents       Incident[]
   reports         Report[]
 
-  @@map("supervision_sessions")
+  @@map("sesiones_supervision")
 }
 
 model Assessment {
@@ -309,7 +309,7 @@ model Assessment {
   sessions        SupervisionSession[]
   interviewQuestions InterviewQuestion[]
 
-  @@map("assessments")
+  @@map("evaluaciones")
 }
 
 model GazeEvent {
@@ -327,7 +327,7 @@ model GazeEvent {
   session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
 
   @@index([supervisionSessionId, timestamp])
-  @@map("gaze_events")
+  @@map("eventos_mirada")
 }
 
 enum TelemetryType {
@@ -353,7 +353,7 @@ model TelemetryEvent {
   session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
 
   @@index([supervisionSessionId, timestamp])
-  @@map("telemetry_events")
+  @@map("eventos_telemetria")
 }
 
 model InterviewQuestion {
@@ -366,7 +366,7 @@ model InterviewQuestion {
   assessment      Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   reactions       InterviewReaction[]
 
-  @@map("interview_questions")
+  @@map("preguntas_entrevista")
 }
 
 model InterviewReaction {
@@ -383,7 +383,7 @@ model InterviewReaction {
   session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
   question                InterviewQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
-  @@map("interview_reactions")
+  @@map("reacciones_entrevista")
 }
 
 // ==========================================
@@ -418,7 +418,7 @@ model Incident {
 
   session                 SupervisionSession @relation(fields: [supervisionSessionId], references: [id], onDelete: Cascade)
 
-  @@map("incidents")
+  @@map("incidentes")
 }
 
 enum ReportType {
@@ -438,7 +438,7 @@ model Report {
 
   session                 SupervisionSession? @relation(fields: [supervisionSessionId], references: [id], onDelete: SetNull)
 
-  @@map("reports")
+  @@map("reportes")
 }
 
 model AuditLog {
@@ -453,5 +453,5 @@ model AuditLog {
 
   usuario         Usuario?           @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@map("audit_logs")
+  @@map("registros_auditoria")
 }
